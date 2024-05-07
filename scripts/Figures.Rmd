@@ -1,0 +1,34 @@
+---
+title: "Untitled"
+author: "Caitie"
+date: "2024-05-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(sf)
+library(ggplot2)
+library(here)
+library(tidyverse)
+```
+
+
+# Plot PE through time
+
+```{r}
+pe<-read_csv(here("output_data/results/PE_baseline_calculations.csv"))
+```
+All PAs
+```{r}
+
+ggplot(pe, aes(x = Year, y = CAPAD_PE)) +
+  geom_line() +
+  theme_bw() +
+  labs(y = "Protection Equality",
+       x = "Year")
+```
+
