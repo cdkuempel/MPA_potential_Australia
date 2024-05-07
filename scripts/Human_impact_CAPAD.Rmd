@@ -1,0 +1,24 @@
+---
+title: "Human_impact_CAPAD"
+author: "Caitie"
+date: "2024-05-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load packages
+```{r}
+
+```
+
+# Load data
+
+CAPAD
+```{r}
+
+```
+
+Human footprint

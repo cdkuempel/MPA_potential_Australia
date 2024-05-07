@@ -19,8 +19,7 @@ library(VoCC)
 
 library(ncdf4)
 library(raster)
-
-library(gdalUtils)
+#library(gdalUtils)
 
 library(sf)
 library(here)
@@ -36,8 +35,12 @@ Information on data: https://www.metoffice.gov.uk/hadobs/hadisst/
 url<-"https://www.metoffice.gov.uk/hadobs/hadisst/data/HadISST_sst.nc.gz"
 destfile<- here("raw_data/Climate_velocity/HadISST_sst.nc.gz")
 download.file(url,destfile)
-gunzip(destfile)
-unzip_filename <- here("raw_data/Climate_velocity/HadISST_sst.nc")
+#zip::unzip(destfile) - this isn't working so manually unzip in folder
+#unzip_filename <- here("raw_data/Climate_velocity/HadISST_sst.nc")
+
+```
+
+```{r}
 data <- nc_open(unzip_filename)
 ```
 
@@ -50,24 +53,37 @@ sst_brick<-brick(unzip_filename)
 ```
 
 ```{r}
-years<-c(1901:2020)
+n<-names(sst_brick)
+tail(n) # to see the last date in the data
+head(n) # to see the first date in the data
+```
+
+
+```{r}
+years<-c(1901:2020) #Decide here what time frame you want to look at and change as necessary. I use the same years as Ali's paper for now
 
 for(i in 1:length(years)){
+print(i)
+sub_x<-subset(x = names(sst_brick), grepl(years[i], names(sst_brick))) # get the names in each year
+sub_sst<-subset(sst_brick, sub_x) # subset the values
+sub_sst_mean<-mean(sub_sst, na.rm = T) # take the average
 
-sub_x<-subset(x = names(sst_brick), grepl(years[i], names(sst_brick))) 
-sub_sst<-subset(sst_brick, sub_x)
-sub_sst_mean<-mean(sub_sst, na.rm = T)
-
-writeRaster(sub_sst_mean, here(paste0("raw_data/Climate_velocity/SST_",years[[i]],".tif")), overwrite = T)
+writeRaster(sub_sst_mean, here(paste0("output_data/Climate_velocity/SST_",years[[i]],".tif")), overwrite = T) #Save the files
 }
 
+```
+
+# Clear environment and memory
+```{r}
+rm(list=ls())
+gc()
 ```
 
 
 # START HERE AFTER INITIAL LOOP
 
 ```{r}
-sst_files<-list.files(here("raw_data/Climate_velocity"), pattern = ".tif", full.names = T)
+sst_files<-list.files(here("output_data/Climate_velocity"), pattern = ".tif", full.names = T)
 sst_files<-sst_files[!grepl(".aux", sst_files)]
 
 sst<-stack(sst_files)
@@ -79,9 +95,13 @@ sg <- spatGrad(sst, th = 0.0001, projected = FALSE)
 v <- gVoCC(tr, sg)
 vel <- v[[1]] # km/yr
 ang <- v[[2]] # degrees
+
+writeRaster(v, here("output_data/Climate_velocity/Climate_velocity_1901_2020.tif"), overwrite = T) #Save the file
+
+
 ```
 
-
+# Load the CAPAD marine dataset
 ```{r}
 unzip(here("raw_data/WDPA/Clean_WDPA_Sept2022.zip"), exdir = here("raw_data/WDPA"))
 
