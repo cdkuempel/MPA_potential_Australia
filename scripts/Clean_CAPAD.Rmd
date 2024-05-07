@@ -1,0 +1,76 @@
+---
+title: "Clean_CAPAD"
+author: "Caitie"
+date: "2024-05-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load packages
+```{r}
+library(sf)
+library(here)
+library(tidyverse)
+library(lubridate)
+```
+
+# Load data
+
+Downloaded from: https://fed.dcceew.gov.au/datasets/782c02c691014efe8ffbd27445fe41d7_0/explore
+
+```{r}
+capad<-st_read(here("raw_data/CAPAD/CAPAD_2022_Marine/Collaborative_Australian_Protected_Areas_Database_(CAPAD)_2022_-_Marine.shp"))
+```
+# All
+
+```{r}
+capad<- capad %>% 
+  st_make_valid(.) %>% #fix errors in geometry
+  mutate(Year = year(GAZ_DATE)) %>% #Create Year column
+  st_transform(., "EPSG:3577") #Re-project data to an equal area projection
+```
+
+```{r}
+capad_diss<-capad %>% 
+  group_by(Year) %>%  # Dissolve by Year
+  summarise(GIS_AREA = sum(GIS_AREA, na.rm = T)) %>% #Sum GIS area
+  mutate(area_km2 = as.numeric(st_area(.))*1e-6) #re-calculate area
+```
+
+```{r}
+st_write(capad_diss, here("output_data/CAPAD/All_MPA_baseline.shp"))
+```
+
+
+
+# Strict
+```{r}
+strict<-capad %>% 
+  filter(IUCN %in% c("Ia", "II", "III", "IV")) %>% 
+  group_by(Year) %>%  # Dissolve by Year
+  summarise(GIS_AREA = sum(GIS_AREA, na.rm = T)) %>% #Sum GIS area
+  mutate(area_km2 = as.numeric(st_area(.))*1e-6) #re-calculate area
+  
+```
+
+```{r}
+st_write(strict, here("output_data/CAPAD/Strict_baseline.shp"), append = FALSE)
+```
+
+# Non-strict
+
+```{r}
+non_strict<-capad %>% 
+  filter(IUCN %in% c("V", "VI")) %>% 
+  group_by(Year) %>%  # Dissolve by Year
+  summarise(GIS_AREA = sum(GIS_AREA, na.rm = T)) %>% #Sum GIS area
+  mutate(area_km2 = as.numeric(st_area(.))*1e-6) #re-calculate area
+```
+
+```{r}
+st_write(non_strict, here("output_data/CAPAD/Non_strict_baseline.shp"))
+```
+
