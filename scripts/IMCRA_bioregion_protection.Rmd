@@ -1,0 +1,108 @@
+---
+title: "Protection_Equality_Gap"
+author: "Caitie"
+date: "2024-05-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load libraries
+```{r}
+library(sf)
+library(ProtectEqual)
+library(tidyverse)
+library(here)
+```
+
+
+# IMCRA ecoregions
+
+Downloaded from: https://fed.dcceew.gov.au/datasets/7394d7984e3f4e60990d4c455126bbfb/explore?layer=0
+
+```{r}
+imcra<-st_read(here("raw_data/IMCRA_regions/IMCRA/Integrated_Marine_and_Coastal_Regionalisation_of_Australia_(IMCRA)_v4.0_-_Meso-scale_Bioregions.shp"))
+```
+```{r}
+imcra_diss<-imcra %>% 
+  st_make_valid(.) %>% 
+  st_transform(., "EPSG:3577") %>% 
+  group_by(MESO_NAME) %>% 
+  summarise(GIS_AREA_KM2 = sum(AREA_KM2, na.rm = T)) %>% 
+  mutate(meso_area_km2 = as.numeric(st_area(.))*1e-6)
+```
+
+# CAPAD baseline
+
+All
+
+```{r}
+capad<-st_read(here("output_data/CAPAD/All_MPA_baseline.shp"))
+```
+
+
+Strict
+
+```{r}
+strict<-st_read(here("output_data/CAPAD/Strict_baseline.shp")) %>% 
+    filter(!is.na(Year) == TRUE) #perhaps think of another way to deal with missing dates
+
+```
+
+
+Non-strict
+
+```{r}
+non_strict<-st_read(here("output_data/CAPAD/Non_strict_baseline.shp"))
+```
+
+
+# Intersect ecoregions with MPA
+
+```{r}
+capad_imcra<-st_intersection(capad, imcra_diss) %>% 
+  st_make_valid(.) %>% 
+  mutate(prop_all = area_km2/meso_area_km2) %>% 
+  st_cast(., "POLYGON")
+```
+
+
+```{r}
+strict_imcra<-st_intersection(strict, imcra_diss) %>% 
+  st_make_valid(.) %>% 
+  mutate(prop_strict = area_km2/meso_area_km2) %>% 
+  st_cast(., "POLYGON")
+non_strict_imcra<-st_intersection(non_strict, imcra_diss) %>% 
+  st_make_valid(.) %>% 
+  mutate(prop_non_strict = area_km2/meso_area_km2)%>% 
+  st_cast(., "POLYGON")
+```
+
+```{r}
+st_write(capad_imcra, here("output_data/CAPAD/All_capad_imcra_intersect.shp"), append = FALSE)
+
+
+st_write(strict_imcra, here("output_data/CAPAD/Strict_imcra_intersect.shp"), append = FALSE)
+
+
+st_write(non_strict_imcra, here("output_data/CAPAD/Non_strict_imcra_intersect.shp"), append = FALSE)
+```
+
+
+
+
+# HERE YOU WOULD THEN REPEAT FOR THE CORRECTED ONE ONCE YOU HAVE DONE THE HUMAN FOOTPRINT CORRECTIONS
+
+# CAPAD corrected
+
+Strict corrected
+
+Non-strict corrected
+
+# Calculate ecoregion protected
+
+Baseline
+
+Corrected
