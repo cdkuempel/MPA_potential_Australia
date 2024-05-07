@@ -1,0 +1,131 @@
+---
+title: "Protection_Equality_Gap"
+author: "Caitie"
+date: "2024-05-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load libraries
+```{r}
+library(sf)
+devtools::install_github("AChauvenet/ProtectEqual")
+library(ProtectEqual)
+library(tidyverse)
+library(here)
+```
+
+
+#CAPAD IMCRA Intersect
+
+All CAPAD MPA baseline
+
+```{r}
+capad_imcra<-st_read(here("output_data/CAPAD/All_capad_imcra_intersect.shp")) %>% 
+  filter(!is.na(Year) == TRUE)
+```
+
+
+Strict baseline
+
+```{r}
+strict_imcra<-st_read(here("output_data/CAPAD/Strict_imcra_intersect.shp")) 
+```
+
+
+Non-strict baseline
+
+```{r}
+non_strict_imcra<-st_read(here("output_data/CAPAD/Non_strict_imcra_intersect.shp")) 
+```
+
+
+# Protection Equality calculation
+
+Use the ProtectEqual package: https://github.com/AChauvenet/ProtectEqual
+Need to cite it as: Chauvenet ALM, Kuempel CD and Possingham HP (2017). ProtectEqual. version 1.0.0. doi: 10.5281/zenodo.163951.
+
+All capad baseline
+
+```{r}
+years<-min(capad_imcra$Year):max(capad_imcra$Year)
+
+capad_pe<-data.frame(Year = NA, CAPAD_PE = NA, CAPAD_N = NA)
+
+for(i in 1:length(years)){
+  y<-years[[i]]
+  sub<-capad_imcra %>% filter(Year <= y)
+  #y<-max(unique(sub$Year))
+  print(y)
+  sub2<-sub %>% 
+    select(ms_r_k2, prop_ll) %>% 
+    rename(ai = ms_r_k2,
+           pi = prop_ll)
+  pe<-pe(sub2, version = "proportional", plot_pe = FALSE, correct = TRUE)
+  
+  capad_pe[i,"Year"]<-y
+  capad_pe[i, "CAPAD_PE"]<-pe$PE
+  capad_pe[i, "CAPAD_N"]<-pe$N
+}
+```
+
+
+Strict baseline
+```{r}
+strict_pe<-data.frame(Year = NA, Strict_PE = NA, Strict_N = NA)
+
+for(i in 1:length(years)){
+  y<-years[[i]]
+  sub<-strict_imcra %>% filter(Year <= y)
+  print(y)
+  sub2<-sub %>% 
+    select(ms_r_k2, prp_str) %>% 
+    rename(ai = ms_r_k2,
+           pi = prp_str)
+  pe<-pe(sub2, version = "proportional", plot_pe = FALSE, correct = TRUE)
+  
+  strict_pe[i,"Year"]<-y
+  strict_pe[i, "Strict_PE"]<-pe$PE
+  strict_pe[i, "Strict_N"]<-pe$N
+}
+```
+
+Non-strict baseline
+
+```{r}
+non_strict_pe<-data.frame(Year = NA, Non_strict_PE = NA, Non_strict_N = NA)
+
+for(i in 1:length(years)){
+  y<-years[[i]]
+  sub<-non_strict_imcra %>% filter(Year <= y)
+  print(y)
+  sub2<-sub %>% 
+    select(ms_r_k2, prp_nn_) %>% 
+    rename(ai = ms_r_k2,
+           pi = prp_nn_)
+  pe<-pe(sub2, version = "proportional", plot_pe = FALSE, correct = TRUE)
+  
+  non_strict_pe[i,"Year"]<-y
+  non_strict_pe[i, "Non_strict_PE"]<-pe$PE
+  non_strict_pe[i, "Non_strict_N"]<-pe$N
+}
+```
+
+```{r}
+combine<-full_join(capad_pe, strict_pe, by = "Year") %>% 
+  full_join(., non_strict_pe, by = "Year") %>% 
+  arrange(., Year)
+```
+
+```{r}
+write_csv(combine, here("output_data/results/PE_baseline_calculations.csv"))
+```
+
+# Protection Gap calculation
+
+Strict baseline
+
+Non-strict baseline
