@@ -49,7 +49,7 @@ st_write(capad_diss, here("output_data/All_MPA_baseline.shp"), append = FALSE)
 # Strict
 ```{r}
 strict<-capad %>% 
-  filter(IUCN %in% c("Ia", "II", "III", "IV")) %>% 
+  filter(IUCN %in% c("Ia", "II", "III")) %>% 
   group_by(Year) %>%  # Dissolve by Year
   summarise(GIS_AREA = sum(GIS_AREA, na.rm = T)) %>% #Sum GIS area
   mutate(area_km2 = as.numeric(st_area(.))*1e-6) #re-calculate area
@@ -64,7 +64,7 @@ st_write(strict, here("output_data/Strict_baseline.shp"), append = FALSE)
 
 ```{r}
 non_strict<-capad %>% 
-  filter(IUCN %in% c("V", "VI")) %>% 
+  filter(IUCN %in% c("IV","V", "VI")) %>% 
   group_by(Year) %>%  # Dissolve by Year
   summarise(GIS_AREA = sum(GIS_AREA, na.rm = T)) %>% #Sum GIS area
   mutate(area_km2 = as.numeric(st_area(.))*1e-6) #re-calculate area
