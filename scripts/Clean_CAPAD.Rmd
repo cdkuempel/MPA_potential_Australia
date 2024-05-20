@@ -22,7 +22,7 @@ library(lubridate)
 Downloaded from: https://fed.dcceew.gov.au/datasets/782c02c691014efe8ffbd27445fe41d7_0/explore
 
 ```{r}
-capad<-st_read(here("raw_data/CAPAD/CAPAD_2022_Marine/Collaborative_Australian_Protected_Areas_Database_(CAPAD)_2022_-_Marine.shp"))
+capad<-st_read(here("raw_data/CAPAD/Collaborative_Australian_Protected_Areas_Database_(CAPAD)_2022_-_Marine.shp"))
 ```
 # All
 
@@ -41,7 +41,7 @@ capad_diss<-capad %>%
 ```
 
 ```{r}
-st_write(capad_diss, here("output_data/CAPAD/All_MPA_baseline.shp"))
+st_write(capad_diss, here("output_data/All_MPA_baseline.shp"), append = FALSE)
 ```
 
 
@@ -57,7 +57,7 @@ strict<-capad %>%
 ```
 
 ```{r}
-st_write(strict, here("output_data/CAPAD/Strict_baseline.shp"), append = FALSE)
+st_write(strict, here("output_data/Strict_baseline.shp"), append = FALSE)
 ```
 
 # Non-strict
@@ -71,6 +71,6 @@ non_strict<-capad %>%
 ```
 
 ```{r}
-st_write(non_strict, here("output_data/CAPAD/Non_strict_baseline.shp"))
+st_write(non_strict, here("output_data/Non_strict_baseline.shp"), append = FALSE)
 ```
 

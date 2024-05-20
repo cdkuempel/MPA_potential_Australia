@@ -12,7 +12,6 @@ knitr::opts_chunk$set(echo = TRUE)
 # Load libraries
 ```{r}
 library(sf)
-library(ProtectEqual)
 library(tidyverse)
 library(here)
 ```
@@ -23,7 +22,7 @@ library(here)
 Downloaded from: https://fed.dcceew.gov.au/datasets/7394d7984e3f4e60990d4c455126bbfb/explore?layer=0
 
 ```{r}
-imcra<-st_read(here("raw_data/IMCRA_regions/IMCRA/Integrated_Marine_and_Coastal_Regionalisation_of_Australia_(IMCRA)_v4.0_-_Meso-scale_Bioregions.shp"))
+imcra<-st_read(here("raw_data/IMCRA_regions/Integrated_Marine_and_Coastal_Regionalisation_of_Australia_(IMCRA)_v4.0_-_Meso-scale_Bioregions.shp"))
 ```
 ```{r}
 imcra_diss<-imcra %>% 
@@ -39,14 +38,14 @@ imcra_diss<-imcra %>%
 All
 
 ```{r}
-capad<-st_read(here("output_data/CAPAD/All_MPA_baseline.shp"))
+capad<-st_read(here("output_data/All_MPA_baseline.shp"))
 ```
 
 
 Strict
 
 ```{r}
-strict<-st_read(here("output_data/CAPAD/Strict_baseline.shp")) %>% 
+strict<-st_read(here("output_data/Strict_baseline.shp")) %>% 
     filter(!is.na(Year) == TRUE) #perhaps think of another way to deal with missing dates
 
 ```
@@ -55,7 +54,7 @@ strict<-st_read(here("output_data/CAPAD/Strict_baseline.shp")) %>%
 Non-strict
 
 ```{r}
-non_strict<-st_read(here("output_data/CAPAD/Non_strict_baseline.shp"))
+non_strict<-st_read(here("output_data/Non_strict_baseline.shp"))
 ```
 
 
@@ -64,7 +63,10 @@ non_strict<-st_read(here("output_data/CAPAD/Non_strict_baseline.shp"))
 ```{r}
 capad_imcra<-st_intersection(capad, imcra_diss) %>% 
   st_make_valid(.) %>% 
-  mutate(prop_all = area_km2/meso_area_km2) %>% 
+  mutate(ecoprotec = as.numeric(st_area(.))*1e-6,
+         prop_all = ecoprotec/meso_area_km2) %>% #mutate is to make a new column. 
+  #this finds the proportion area protected of each ecoregion 
+  #the . in st_area allows us to use the output from the intersecting function.
   st_cast(., "POLYGON")
 ```
 
@@ -72,25 +74,42 @@ capad_imcra<-st_intersection(capad, imcra_diss) %>%
 ```{r}
 strict_imcra<-st_intersection(strict, imcra_diss) %>% 
   st_make_valid(.) %>% 
-  mutate(prop_strict = area_km2/meso_area_km2) %>% 
+  mutate(ecoprotec = as.numeric(st_area(.))*1e-6, 
+         prop_strict = ecoprotec/meso_area_km2) %>% 
   st_cast(., "POLYGON")
 non_strict_imcra<-st_intersection(non_strict, imcra_diss) %>% 
   st_make_valid(.) %>% 
-  mutate(prop_non_strict = area_km2/meso_area_km2)%>% 
+  mutate(ecoprotec = as.numeric(st_area(.))*1e-6, 
+         prop_non_strict = ecoprotec/meso_area_km2)%>% 
   st_cast(., "POLYGON")
 ```
 
 ```{r}
-st_write(capad_imcra, here("output_data/CAPAD/All_capad_imcra_intersect.shp"), append = FALSE)
+st_write(capad_imcra, here("output_data/All_capad_imcra_intersect.shp"), append = FALSE)
 
 
-st_write(strict_imcra, here("output_data/CAPAD/Strict_imcra_intersect.shp"), append = FALSE)
+st_write(strict_imcra, here("output_data/Strict_imcra_intersect.shp"), append = FALSE)
 
 
-st_write(non_strict_imcra, here("output_data/CAPAD/Non_strict_imcra_intersect.shp"), append = FALSE)
+st_write(non_strict_imcra, here("output_data/Non_strict_imcra_intersect.shp"), append = FALSE)
 ```
 
+```{r}
+library(tmap)
+```
 
+```{r}
+non_strict_imcra<- non_strict_imcra%>% 
+  st_make_valid(.)
+
+```
+
+```{r}
+tmap_mode("view")
+tmap_options(check.and.fix = TRUE)
+tm_shape(non_strict_imcra)+
+  tm_polygons("meso_area_km2")
+```
 
 
 # HERE YOU WOULD THEN REPEAT FOR THE CORRECTED ONE ONCE YOU HAVE DONE THE HUMAN FOOTPRINT CORRECTIONS
