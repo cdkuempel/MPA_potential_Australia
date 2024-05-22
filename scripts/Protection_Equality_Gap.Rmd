@@ -16,15 +16,16 @@ devtools::install_github("AChauvenet/ProtectEqual")
 library(ProtectEqual)
 library(tidyverse)
 library(here)
+devtools::install_github("KerstinJantke/ConsTarget")
+library(ConsTarget)
 ```
-
 
 #CAPAD IMCRA Intersect
 
 All CAPAD MPA baseline
 
 ```{r}
-capad_imcra<-st_read(here("output_data/CAPAD/All_capad_imcra_intersect.shp")) %>% 
+capad_imcra<-st_read(here("output_data/All_capad_imcra_intersect.shp")) %>% 
   filter(!is.na(Year) == TRUE)
 ```
 
@@ -32,14 +33,14 @@ capad_imcra<-st_read(here("output_data/CAPAD/All_capad_imcra_intersect.shp")) %>
 Strict baseline
 
 ```{r}
-strict_imcra<-st_read(here("output_data/CAPAD/Strict_imcra_intersect.shp")) 
+strict_imcra<-st_read(here("output_data/Strict_imcra_intersect.shp")) 
 ```
 
 
 Non-strict baseline
 
 ```{r}
-non_strict_imcra<-st_read(here("output_data/CAPAD/Non_strict_imcra_intersect.shp")) 
+non_strict_imcra<-st_read(here("output_data/Non_strict_imcra_intersect.shp")) 
 ```
 
 
@@ -57,14 +58,16 @@ capad_pe<-data.frame(Year = NA, CAPAD_PE = NA, CAPAD_N = NA)
 
 for(i in 1:length(years)){
   y<-years[[i]]
-  sub<-capad_imcra %>% filter(Year <= y)
+  sub<-capad_imcra %>% filter(Year <= y) %>%
+    as.data.frame() %>%
+    select(-geometry)
+  eco_sum<-sub %>%
+    group_by(MESO_NA) %>%
+    summarise(ai = unique(ms_r_k2),
+              pi = sum(prop_ll, na.rm = T))
   #y<-max(unique(sub$Year))
   print(y)
-  sub2<-sub %>% 
-    select(ms_r_k2, prop_ll) %>% 
-    rename(ai = ms_r_k2,
-           pi = prop_ll)
-  pe<-pe(sub2, version = "proportional", plot_pe = FALSE, correct = TRUE)
+  pe<-pe(eco_sum, version = "proportional", plot_pe = FALSE, correct = TRUE)
   
   capad_pe[i,"Year"]<-y
   capad_pe[i, "CAPAD_PE"]<-pe$PE
@@ -79,13 +82,15 @@ strict_pe<-data.frame(Year = NA, Strict_PE = NA, Strict_N = NA)
 
 for(i in 1:length(years)){
   y<-years[[i]]
-  sub<-strict_imcra %>% filter(Year <= y)
+  sub<-strict_imcra %>% filter(Year <= y) %>%
+    as.data.frame() %>%
+    select(-geometry)
   print(y)
-  sub2<-sub %>% 
-    select(ms_r_k2, prp_str) %>% 
-    rename(ai = ms_r_k2,
-           pi = prp_str)
-  pe<-pe(sub2, version = "proportional", plot_pe = FALSE, correct = TRUE)
+eco_sum<-sub %>%
+    group_by(MESO_NA) %>%
+    summarise(ai = unique(ms_r_k2),
+              pi = sum(prp_str, na.rm = T))
+  pe<-pe(eco_sum, version = "proportional", plot_pe = FALSE, correct = TRUE)
   
   strict_pe[i,"Year"]<-y
   strict_pe[i, "Strict_PE"]<-pe$PE
@@ -100,13 +105,17 @@ non_strict_pe<-data.frame(Year = NA, Non_strict_PE = NA, Non_strict_N = NA)
 
 for(i in 1:length(years)){
   y<-years[[i]]
-  sub<-non_strict_imcra %>% filter(Year <= y)
+  sub<-non_strict_imcra %>% filter(Year <= y) %>%
+    as.data.frame() %>%
+    select(-geometry)
   print(y)
-  sub2<-sub %>% 
-    select(ms_r_k2, prp_nn_) %>% 
-    rename(ai = ms_r_k2,
-           pi = prp_nn_)
-  pe<-pe(sub2, version = "proportional", plot_pe = FALSE, correct = TRUE)
+  
+  eco_sum<-sub %>%
+    group_by(MESO_NA) %>%
+    summarise(ai = unique(ms_r_k2),
+              pi = sum(prp_nn_, na.rm = T))
+  
+  pe<-pe(eco_sum, version = "proportional", plot_pe = FALSE, correct = TRUE)
   
   non_strict_pe[i,"Year"]<-y
   non_strict_pe[i, "Non_strict_PE"]<-pe$PE
@@ -127,5 +136,21 @@ write_csv(combine, here("output_data/results/PE_baseline_calculations.csv"))
 # Protection Gap calculation
 
 Strict baseline
+Calculate the mean protection gap for 30%
+```{r}
+y = 2022
+
+sub<-strict_imcra %>% filter(Year <= y) %>%
+    as.data.frame() %>%
+    select(-geometry)
+
+eco_sum<-sub %>%
+    group_by(MESO_NA) %>%
+    summarise(ai = unique(ms_r_k2),
+              pi = sum(prp_str, na.rm = T))
+
+mpg(eco_sum, 0.3,plot = TRUE)  
+```
+
 
 Non-strict baseline
