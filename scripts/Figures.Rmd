@@ -31,4 +31,7 @@ ggplot(pe, aes(x = Year, y = CAPAD_PE)) +
   labs(y = "Protection Equality",
        x = "Year")
 ```
+```{r}
+ggsave(here("figures/All_PAs_Protection_equality.png"), width =9, height=7)
+```
 
