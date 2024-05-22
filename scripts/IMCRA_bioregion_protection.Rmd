@@ -94,23 +94,6 @@ st_write(strict_imcra, here("output_data/Strict_imcra_intersect.shp"), append = 
 st_write(non_strict_imcra, here("output_data/Non_strict_imcra_intersect.shp"), append = FALSE)
 ```
 
-```{r}
-library(tmap)
-```
-
-```{r}
-non_strict_imcra<- non_strict_imcra%>% 
-  st_make_valid(.)
-
-```
-
-```{r}
-tmap_mode("view")
-tmap_options(check.and.fix = TRUE)
-tm_shape(non_strict_imcra)+
-  tm_polygons("meso_area_km2")
-```
-
 
 # HERE YOU WOULD THEN REPEAT FOR THE CORRECTED ONE ONCE YOU HAVE DONE THE HUMAN FOOTPRINT CORRECTIONS
 
