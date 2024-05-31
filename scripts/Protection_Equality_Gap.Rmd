@@ -12,11 +12,11 @@ knitr::opts_chunk$set(echo = TRUE)
 # Load libraries
 ```{r}
 library(sf)
-devtools::install_github("AChauvenet/ProtectEqual")
+#devtools::install_github("AChauvenet/ProtectEqual")
 library(ProtectEqual)
 library(tidyverse)
 library(here)
-devtools::install_github("KerstinJantke/ConsTarget")
+#devtools::install_github("KerstinJantke/ConsTarget")
 library(ConsTarget)
 ```
 
@@ -147,9 +147,10 @@ sub<-strict_imcra %>% filter(Year <= y) %>%
 eco_sum<-sub %>%
     group_by(MESO_NA) %>%
     summarise(ai = unique(ms_r_k2),
-              pi = sum(prp_str, na.rm = T))
+              pi = sum(prp_str, na.rm = T)) %>% 
+  rename(feature = MESO_NA)
 
-mpg(eco_sum, 0.3,plot = TRUE)  
+mpg(eco_sum, 0.3,plot = FALSE)  
 ```
 
 
