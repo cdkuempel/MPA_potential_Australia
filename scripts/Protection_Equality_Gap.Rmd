@@ -138,20 +138,56 @@ write_csv(combine, here("output_data/results/PE_baseline_calculations.csv"))
 Strict baseline
 Calculate the mean protection gap for 30%
 ```{r}
-y = 2022
 
-sub<-strict_imcra %>% filter(Year <= y) %>%
+strict_mpg<-data.frame(Year = NA, Strict_MPG = NA, Strict_N = NA)
+
+years<-min(strict_imcra$Year):max(strict_imcra$Year)
+
+
+for(i in 1:length(years)){
+   y<-years[[i]]
+  sub<-strict_imcra %>% filter(Year <= y) %>%
     as.data.frame() %>%
     select(-geometry)
-
+  print(y)
 eco_sum<-sub %>%
     group_by(MESO_NA) %>%
     summarise(ai = unique(ms_r_k2),
               pi = sum(prp_str, na.rm = T)) %>% 
   rename(feature = MESO_NA)
 
-mpg(eco_sum, 0.3,plot = FALSE)  
+ mpg<- mpg(eco_sum, target = 0.3, plot = F)
+  
+  strict_mpg[i,"Year"]<-y
+  strict_mpg[i, "Strict_MPG"]<-mpg$MPG
+  strict_mpg[i, "Strict_N"]<-mpg$N
+}
 ```
 
 
 Non-strict baseline
+```{r}
+non_strict_mpg<-data.frame(Year = NA, Non_Strict_MPG = NA, Non_Strict_N = NA)
+
+years<-min(non_strict_imcra$Year, na.rm = T):max(non_strict_imcra$Year, na.rm=T)
+
+for(i in 1:length(years)){
+   y<-years[[i]]
+  sub<-non_strict_imcra %>% filter(Year <= y) %>%
+    as.data.frame() %>%
+    select(-geometry)
+  print(y)
+eco_sum<-sub %>%
+    group_by(MESO_NA) %>%
+    summarise(ai = unique(ms_r_k2),
+              pi = sum(prp_nn_, na.rm = T)) %>% 
+    rename(feature = MESO_NA)
+
+ mpg<- mpg(eco_sum, target = 0.1, plot = F)
+  
+  non_strict_mpg[i,"Year"]<-y
+  non_strict_mpg[i, "Non_Strict_MPG"]<-mpg$MPG
+  non_strict_mpg[i, "Non_Strict_N"]<-mpg$N
+}
+```
+
