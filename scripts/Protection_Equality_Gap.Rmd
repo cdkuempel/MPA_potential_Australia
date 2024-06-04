@@ -64,7 +64,7 @@ for(i in 1:length(years)){
   eco_sum<-sub %>%
     group_by(MESO_NA) %>%
     summarise(ai = unique(ms_r_k2),
-              pi = sum(prop_ll, na.rm = T))
+              pi = sum(ecoprtc, na.rm = T))
   #y<-max(unique(sub$Year))
   print(y)
   pe<-pe(eco_sum, version = "proportional", plot_pe = FALSE, correct = TRUE)
@@ -89,7 +89,7 @@ for(i in 1:length(years)){
 eco_sum<-sub %>%
     group_by(MESO_NA) %>%
     summarise(ai = unique(ms_r_k2),
-              pi = sum(prp_str, na.rm = T))
+              pi = sum(ecoprtc, na.rm = T))
   pe<-pe(eco_sum, version = "proportional", plot_pe = FALSE, correct = TRUE)
   
   strict_pe[i,"Year"]<-y
@@ -97,6 +97,7 @@ eco_sum<-sub %>%
   strict_pe[i, "Strict_N"]<-pe$N
 }
 ```
+
 
 Non-strict baseline
 
@@ -113,7 +114,7 @@ for(i in 1:length(years)){
   eco_sum<-sub %>%
     group_by(MESO_NA) %>%
     summarise(ai = unique(ms_r_k2),
-              pi = sum(prp_nn_, na.rm = T))
+              pi = sum(ecoprtc, na.rm = T))
   
   pe<-pe(eco_sum, version = "proportional", plot_pe = FALSE, correct = TRUE)
   
@@ -123,17 +124,48 @@ for(i in 1:length(years)){
 }
 ```
 
+
 ```{r}
 combine<-full_join(capad_pe, strict_pe, by = "Year") %>% 
   full_join(., non_strict_pe, by = "Year") %>% 
   arrange(., Year)
 ```
 
+
 ```{r}
 write_csv(combine, here("output_data/results/PE_baseline_calculations.csv"))
 ```
 
+
 # Protection Gap calculation
+All capad areas 
+```{r}
+capad_mpg<-data.frame(Year = NA, Capad_MPG = NA, Capad_N = NA)
+
+years<-min(capad_imcra$Year):max(capad_imcra$Year)
+
+
+for(i in 1:length(years)){
+   y<-years[[i]]
+  sub<-capad_imcra %>% filter(Year <= y) %>%
+    as.data.frame() %>%
+    select(-geometry)
+  print(y)
+eco_sum<-sub %>%
+    group_by(MESO_NA) %>%
+    summarise(ai = unique(ms_r_k2),
+              pi = sum(ecoprtc, na.rm = T)) %>% 
+  rename(feature = MESO_NA)
+
+ mpg<- mpg(eco_sum, target = 0.3, plot = F)
+  
+  capad_mpg[i,"Year"]<-y
+  capad_mpg[i, "Capad_MPG"]<-mpg$MPG
+  capad_mpg[i, "Capad_N"]<-mpg$N
+}
+```
+
+
 
 Strict baseline
 Calculate the mean protection gap for 30%
@@ -153,7 +185,7 @@ for(i in 1:length(years)){
 eco_sum<-sub %>%
     group_by(MESO_NA) %>%
     summarise(ai = unique(ms_r_k2),
-              pi = sum(prp_str, na.rm = T)) %>% 
+              pi = sum(ecoprtc, na.rm = T)) %>% 
   rename(feature = MESO_NA)
 
  mpg<- mpg(eco_sum, target = 0.3, plot = F)
@@ -180,7 +212,7 @@ for(i in 1:length(years)){
 eco_sum<-sub %>%
     group_by(MESO_NA) %>%
     summarise(ai = unique(ms_r_k2),
-              pi = sum(prp_nn_, na.rm = T)) %>% 
+              pi = sum(ecoprtc, na.rm = T)) %>% 
     rename(feature = MESO_NA)
 
  mpg<- mpg(eco_sum, target = 0.1, plot = F)

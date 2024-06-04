@@ -24,6 +24,7 @@ Downloaded from: https://fed.dcceew.gov.au/datasets/782c02c691014efe8ffbd27445fe
 ```{r}
 capad<-st_read(here("raw_data/CAPAD/Collaborative_Australian_Protected_Areas_Database_(CAPAD)_2022_-_Marine.shp"))
 ```
+
 # All
 
 ```{r}
@@ -33,12 +34,14 @@ capad<- capad %>%
   st_transform(., "EPSG:3577") #Re-project data to an equal area projection
 ```
 
+
 ```{r}
 capad_diss<-capad %>% 
   group_by(Year) %>%  # Dissolve by Year
   summarise(GIS_AREA = sum(GIS_AREA, na.rm = T)) %>% #Sum GIS area
   mutate(area_km2 = as.numeric(st_area(.))*1e-6) #re-calculate area
 ```
+
 
 ```{r}
 st_write(capad_diss, here("output_data/All_MPA_baseline.shp"), append = FALSE)
@@ -56,9 +59,11 @@ strict<-capad %>%
   
 ```
 
+
 ```{r}
 st_write(strict, here("output_data/Strict_baseline.shp"), append = FALSE)
 ```
+
 
 # Non-strict
 
@@ -69,6 +74,7 @@ non_strict<-capad %>%
   summarise(GIS_AREA = sum(GIS_AREA, na.rm = T)) %>% #Sum GIS area
   mutate(area_km2 = as.numeric(st_area(.))*1e-6) #re-calculate area
 ```
+
 
 ```{r}
 st_write(non_strict, here("output_data/Non_strict_baseline.shp"), append = FALSE)
