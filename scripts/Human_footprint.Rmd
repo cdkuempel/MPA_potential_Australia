@@ -19,9 +19,11 @@ library(lubridate)
 library(terra)
 ```
 
+All human footprint data downloaded from: https://knb.ecoinformatics.org/view/doi:10.5063/F12B8WBS
+
+
 # Load data
-Downloaded from: https://knb.ecoinformatics.org/view/doi:10.5063/F12B8WBS
-2003 
+
 ```{r}
 footprint2003 <- rast(here("raw_data/Human_footprint/cumulative_impact_2003.tif"))
 ```
