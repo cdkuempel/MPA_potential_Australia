@@ -30,39 +30,62 @@ footprint2003 <- rast(here("raw_data/Human_footprint/cumulative_impact_2003.tif"
 plot(log10(footprint2003+1))
 ```
 
-2013
+#Load in data set 2013
 ```{r}
 footprint2013 <- rast(here("raw_data/Human_footprint/cumulative_impact_2013.tif"))
 ```
 
-```{r}
-plot(log10(footprint2013_projected+1))
-lines(capad)
-
-#This looks strange due to Aus projection, but the capad + footprint data sets line up  
-```
-#Input capad data 
-```{r}
-capad<- vect(here("output_data/All_MPA_baseline.shp"))
-```
 
 #Reproject human footprint data 
-project(raster, crs(other data set we want it the same as)) - this is for when we have two different rasters 
-
-
 ```{r}
 footprint2013_projected<- project(footprint2013,"epsg:3577")
 ```
 
+#Save projection 
+```{r}
+writeRaster(footprint2013_projected, here("output_data/2013_footprint_projected.tif"), overwrite = FALSE)
+```
+
+#Load in EEZ data 
+```{r}
+eez<- vect(here("raw_data/EEZ/au_eez_pol_april2022.shp"))
+```
+
+##Reproject EEZ to epsg:3577 
+```{r}
+eez_project <- project(eez, "epsg:3577")
+```
+
+#Input capad data 
+```{r}
+capad<- vect(here("output_data/All_MPA_baseline.shp"))
+
+strict<- vect(here("output_data/Strict_baseline.shp"))
+
+non_strict<- vect(here("output_data/Non_strict_baseline.shp"))
+
+```
+
+##Plot to check projections line up 
+```{r}
+plot(log10(footprint2013_projected+1))
+lines(capad)
+lines(eez_project)
+
+#This looks strange due to Aus projection, but the capad + footprint data sets line up  
+```
+
 
 #Clip footprint to Aus EEZ
-might need to reproject the eez 
 ```{r}
-crop()
+aus_footprint_2013<- crop(footprint2013_projected, eez_project, mask = TRUE)
 
-#remove NA values (mask) 
-mask()
-#or use mask = TRUE in crop() function
+```
+
+##Plot aus data 
+```{r}
+plot(aus_footprint_2013)
+lines(capad)
 ```
 
 
@@ -70,10 +93,61 @@ mask()
 Can use hist() or freq() to see the break down of raster values 
 freq(, value = NA) to show how many are NA
 
+##Average for aus EEZ
+```{r}
+global(aus_footprint_2013, "mean", na.rm = TRUE)
+
+#Mean = 1.243893
+```
+
+
 global() gives statistics e.g. global(raster, "mean", na.rm = TRUE)
+##footprint for all protected areas
+```{r}
+capad_footprint_2013<- crop(aus_footprint_2013, capad, mask= TRUE)
+
+global(capad_footprint_2013, "mean", na.rm = TRUE)
+#mean 1.164847
+
+hist(capad_footprint_2013)
+```
+
+## footprint for strict PA
+```{r}
+strict_footprint_2013 <- crop(aus_footprint_2013, strict, mask = TRUE)
+
+global(strict_footprint_2013, "mean", na.rm = TRUE)
+#Mean 1.137427 
+```
+
+## footprint for non strict PA 
+```{r}
+nonstrict_footprint_2013 <- crop(aus_footprint_2013, non_strict, mask = TRUE)
+
+global(nonstrict_footprint_2013, "mean", na.rm = TRUE)
+#Mean 1.180736
+```
+
+
+#Select out open ocean
+```{r}
+open_footprint_2013 <- mask(aus_footprint_2013, capad, inverse = TRUE)
+
+#plot(open_footprint_2013)
+#lines(capad)
+
+```
+
+## footprint for open areas
+```{r}
+global(open_footprint_2013, "mean", na.rm = TRUE)
+#mean = 1.313475
+
+```
+
 
 #Find threshold value for converted waters 
-
+Ocean wilderness has previously been considered the 10% of ocean with least human impacts - we could find the least impacted 10% of aus waters 
 
 #change raster to 0 and 1 
 This code is for an example, reclassing numbers less than the mean as 1 and more than the mean as 2. Needs to be as a matrix 
