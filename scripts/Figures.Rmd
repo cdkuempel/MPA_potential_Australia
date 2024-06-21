@@ -31,7 +31,43 @@ ggplot(pe, aes(x = Year, y = CAPAD_PE)) +
   labs(y = "Protection Equality",
        x = "Year")
 ```
+
+
+All capad types 
+```{r}
+
+ggplot(pe, aes(x = Year, y = CAPAD_PE, colour = "darkblue")) +
+  geom_line() +
+  geom_line(aes(y = Strict_PE, colour = "darkred"))+
+  geom_line(aes(y = Non_strict_PE, colour = "darkgreen"))+
+  theme_bw() +
+  labs(y = "Protection Equality",
+       x = "Year",
+       colour = "Protection type")
+  
+```
+
+
+
+
+
 ```{r}
 ggsave(here("figures/All_PAs_Protection_equality.png"), width =9, height=7)
+```
+
+#Plot MPG 
+Load in data 
+```{r}
+mpg<- read_csv(here("output_data/results/MPG_baseline_calculations.csv"))
+```
+
+```{r}
+ggplot(mpg, aes(x = Year, y = Capad_MPG, col = "orange")) +
+  geom_line() +
+  geom_line(aes(y = Strict_MPG, colour = "blue"))+
+  geom_line(aes(y = Non_Strict_MPG, colour = "red"))+
+  theme_bw() +
+  labs(y = "Mean Protection Gap",
+       x = "Year")
 ```
 

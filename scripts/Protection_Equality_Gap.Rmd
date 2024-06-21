@@ -223,3 +223,14 @@ eco_sum<-sub %>%
 }
 ```
 
+```{r}
+combine_mpg<-full_join(capad_mpg, strict_mpg, by = "Year") %>% 
+  full_join(., non_strict_mpg, by = "Year") %>% 
+  arrange(., Year)
+```
+
+
+```{r}
+write_csv(combine_mpg, here("output_data/results/MPG_baseline_calculations.csv"))
+```
+
