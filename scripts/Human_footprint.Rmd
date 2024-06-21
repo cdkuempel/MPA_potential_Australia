@@ -60,18 +60,18 @@ eez_project <- project(eez, "epsg:3577")
 
 #Input capad data 
 ```{r}
-capad<- vect(here("output_data/All_MPA_baseline.shp"))
+capad_2013<- vect(here("output_data/All_MPA_baseline_2013.shp"))
 
-strict<- vect(here("output_data/Strict_baseline.shp"))
+strict_2013<- vect(here("output_data/Strict_baseline_2013.shp"))
 
-non_strict<- vect(here("output_data/Non_strict_baseline.shp"))
+non_strict_2013<- vect(here("output_data/Non_strict_baseline_2013.shp"))
 
 ```
 
 ##Plot to check projections line up 
 ```{r}
 plot(log10(footprint2013_projected+1))
-lines(capad)
+lines(capad_2013)
 lines(eez_project)
 
 #This looks strange due to Aus projection, but the capad + footprint data sets line up  
@@ -87,7 +87,7 @@ aus_footprint_2013<- crop(footprint2013_projected, eez_project, mask = TRUE)
 ##Plot aus data 
 ```{r}
 plot(aus_footprint_2013)
-lines(capad)
+lines(capad_2013)
 ```
 
 
@@ -106,34 +106,34 @@ global(aus_footprint_2013, "mean", na.rm = TRUE)
 global() gives statistics e.g. global(raster, "mean", na.rm = TRUE)
 ##footprint for all protected areas
 ```{r}
-capad_footprint_2013<- crop(aus_footprint_2013, capad, mask= TRUE)
+capad_footprint_2013<- crop(aus_footprint_2013, capad_2013, mask= TRUE)
 
 global(capad_footprint_2013, "mean", na.rm = TRUE)
-#mean 1.164847
+#mean 1.174831
 
 hist(capad_footprint_2013)
 ```
 
 ## footprint for strict PA
 ```{r}
-strict_footprint_2013 <- crop(aus_footprint_2013, strict, mask = TRUE)
+strict_footprint_2013 <- crop(aus_footprint_2013, strict_2013, mask = TRUE)
 
 global(strict_footprint_2013, "mean", na.rm = TRUE)
-#Mean 1.137427 
+#Mean 1.14252
 ```
 
 ## footprint for non strict PA 
 ```{r}
-nonstrict_footprint_2013 <- crop(aus_footprint_2013, non_strict, mask = TRUE)
+nonstrict_footprint_2013 <- crop(aus_footprint_2013, non_strict_2013, mask = TRUE)
 
 global(nonstrict_footprint_2013, "mean", na.rm = TRUE)
-#Mean 1.180736
+#Mean 1.184331
 ```
 
 
 #Select out open ocean
 ```{r}
-open_footprint_2013 <- mask(aus_footprint_2013, capad, inverse = TRUE)
+open_footprint_2013 <- mask(aus_footprint_2013, capad_2013, inverse = TRUE)
 
 #plot(open_footprint_2013)
 #lines(capad)
@@ -143,7 +143,7 @@ open_footprint_2013 <- mask(aus_footprint_2013, capad, inverse = TRUE)
 ## footprint for open areas
 ```{r}
 global(open_footprint_2013, "mean", na.rm = TRUE)
-#mean = 1.313475
+#mean = 1.285586
 
 ```
 
