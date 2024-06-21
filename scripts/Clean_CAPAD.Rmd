@@ -47,6 +47,21 @@ capad_diss<-capad %>%
 st_write(capad_diss, here("output_data/All_MPA_baseline.shp"), append = FALSE)
 ```
 
+##All by year 
+```{r}
+capad_diss_2013<-capad %>% 
+  group_by(Year) %>%  # Dissolve by Year
+  filter(Year <= 2013)%>%
+  summarise(GIS_AREA = sum(GIS_AREA, na.rm = T)) %>% #Sum GIS area
+  mutate(area_km2 = as.numeric(st_area(.))*1e-6) #re-calculate area
+```
+
+
+```{r}
+st_write(capad_diss_2013, here("output_data/All_MPA_baseline_2013.shp"), append = FALSE)
+```
+
+
 
 
 # Strict
@@ -64,6 +79,21 @@ strict<-capad %>%
 st_write(strict, here("output_data/Strict_baseline.shp"), append = FALSE)
 ```
 
+##Strict by year 
+```{r}
+strict_2013<-capad %>% 
+  filter(IUCN %in% c("Ia", "II", "III")) %>% 
+  group_by(Year) %>%  # Dissolve by Year
+  filter(Year <= 2013)%>%
+  summarise(GIS_AREA = sum(GIS_AREA, na.rm = T)) %>% #Sum GIS area
+  mutate(area_km2 = as.numeric(st_area(.))*1e-6) #re-calculate area
+
+```
+
+
+```{r}
+st_write(strict_2013, here("output_data/Strict_baseline_2013.shp"), append = FALSE)
+```
 
 # Non-strict
 
@@ -79,4 +109,23 @@ non_strict<-capad %>%
 ```{r}
 st_write(non_strict, here("output_data/Non_strict_baseline.shp"), append = FALSE)
 ```
+
+
+##Non-strict by year
+```{r}
+
+non_strict_2013<-capad %>% 
+  filter(IUCN %in% c("IV","V", "VI")) %>% 
+  group_by(Year) %>%  # Dissolve by Year
+  filter(Year <= 2013)%>%
+  summarise(GIS_AREA = sum(GIS_AREA, na.rm = T)) %>% #Sum GIS area
+  mutate(area_km2 = as.numeric(st_area(.))*1e-6) #re-calculate area
+
+```
+
+
+```{r}
+st_write(non_strict_2013, here("output_data/Non_strict_baseline_2013.shp"), append = FALSE)
+```
+
 
