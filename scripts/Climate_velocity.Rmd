@@ -1,0 +1,80 @@
+---
+title: "Untitled"
+author: "Jade"
+date: "2024-06-26"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Link for climetrics package - https://cran.r-project.org/package=climetrics 
+```{r}
+#install.packages("climetrics")
+library(climetrics)
+library(terra)
+library(raster)
+
+#install.packages("ncdf4")
+library(ncdf4)
+
+library(lubridate)
+
+#This package unavailable for this version of R - find alternate if needed 
+#install.packages("gdal_utils")
+#library(gdal_utils)
+
+library(sf)
+library(here)
+library(tidyverse)
+```
+
+
+#Download data 
+Available from: https://s3-ap-southeast-2.amazonaws.com/aws-wps-prod/jobs/c7946c43-086c-46d0-9716-dc79c46c42b5/IMOS_aggregation_20240629T073820Z.zip
+https://catalogue-imos.aodn.org.au/geonetwork/srv/eng/catalog.search#/metadata/d6f49c4a-8b75-4d05-acd4-b9c085bf4de0
+```{r}
+filename<- (here("raw_data/IMOS_temp/IMOS_aggregation_20240629T073820Z.nc"))
+
+data <- nc_open(filename)
+```
+
+```{r}
+sst_brick<- brick(filename)
+```
+
+#extract mean temp. per year
+```{r}
+years<-c(2003:2013)
+
+for(i in 1:length(years)){
+sub_x<-subset(x = names(sst_brick), grepl(years[i], names(sst_brick))) 
+sub_sst<-subset(x = sst_brick, sub_x)
+sub_sst_mean<-mean(sub_sst, na.rm = T)
+
+writeRaster(sub_sst_mean, here(paste0("raw_data/IMOS_temp/SST_",years[[i]],".tif")), overwrite = T)
+}
+
+```
+
+
+
+```{r}
+sst_files<-list.files(here("raw_data/IMOS_temp"), pattern = ".tif", full.names = T)
+sst_files<-sst_files[!grepl(".aux", sst_files)]
+
+sst<-c(sst_files)
+
+n <- seq(ymd('2003-12-31'),ymd('2013-12-31'),by ='1 year')
+
+sst <- rts(sst, n)
+```
+
+```{r}
+ve <- gVelocity(sst)
+```
+
+
+
