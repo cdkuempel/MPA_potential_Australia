@@ -1,0 +1,142 @@
+---
+title: "Untitled"
+author: "Caitie"
+date: "2024-07-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load libraries
+
+```{r}
+library(terra)
+library(sf)
+library(here)
+library(pbmcapply)
+library(parallel)
+library(foreach)
+library(doParallel)
+```
+
+# Load datasets
+
+After looking at the terrestrial footprint data, I think we should focus on "direct" pressures. The marine footprint is a bit different as it includes climate change threats, which MPAs cannot abate. Since we are focused on how effective MPAs are - I think it makes sense to only focus on threats they can stop (so direct threats that MPAs can stop).
+
+These include (based on Jones et al. wilderness paper)
+
+All forms of fishing (6 in total)
+Benthic structures # Excluded in the pace of change paper due to data limitations
+Commercial Shipping
+Invasive Species #Excluded in the pace of change paper due to data limitations
+Ocean-based pollution # Excluded in the pace of change paper due to data limitations
+
+We can also exclude land-based pressures because MPAs cannot stop them either so that leaves us with 7 pressures.
+
+
+We then want to (as per Jones et al.) for each year is:
+
+1. Identify the lowest 10% of each layer (<10% = 0, >=10% = 1)
+
+We want to use the normalised (or rescaled) layer for each pressure that is between 0 and 1.
+
+```{r}
+years<-c(2003:2013)
+
+stressors<-list.files(path = here("raw_data/HFP/stressors"),full.name = T)
+
+```
+
+```{r}
+registerDoParallel(5)
+foreach(stress = 1:length(stressors)) %dopar%{ # year=2013 for some reason this was not running automatically and I had to run manually in chunks.
+
+   t<-rast(stressors[[stress]])
+    name<-names(t)
+    
+    t2<-t
+    t2[t2==0]<-NA #we may need to think about this, since there are so many zeros in some layers
+    
+    c_10<-global(t2, \(i) quantile(i, 0.1, na.rm=T))
+
+    c_corr<-ifel(t2<c_10[[1]], 0, 1, filename = here(paste0("output_data/HFP/wilderness/stressors/Wilderness_", name,".tif")),overwrite = T) # 0 is wilderness and 1 is not
+    
+    #writeRaster(c_corr, here(paste0("output_data/HFP/wilderness/stressors/Wilderness_", name,".tif")),overwrite = T)
+  
+}
+
+```
+
+
+
+2. Exclude the lowest 10% of cumulative impact in that year
+
+I think we will need to recalculate the impact layer based on only the direct threats
+
+```{r}
+chi_list<-list.files(path = here("output_data/HFP/cumulative_impact"),full.name = T)
+
+```
+
+```{r}
+registerDoParallel(5)
+foreach(chi = 1:length(chi_list)) %dopar%{ 
+chi_sub<-rast(chi_list[[chi]])
+
+name<-names(chi_sub)
+
+chi_sub2<- chi_sub
+chi_sub2[chi_sub2==0]<-NA 
+
+chi_10_2<-global(chi_sub2, \(i) quantile(i, 0.1, na.rm=T))
+
+chi_corr<-ifel(chi_sub2<chi_10_2[[1]], 0, 1, filename = here(paste0("output_data/HFP/wilderness/direct_chi/Wildnerness_",name,".tif")), overwrite = TRUE) # wilderness is now 0 and everything else is 1
+
+
+}
+```
+
+3. Sum layers to identify areas that are in the lowest 10% for each layer (so value of 0 after being summed)
+
+```{r}
+years<-c(2003:2013)
+wild_chi<-list.files(here("output_data/HFP/wilderness/direct_chi"), full = T)
+wild_stress<-list.files(here("output_data/HFP/wilderness/stressors"), full = T)
+
+for(i in 2:length(years)){
+  print(years[[i]])
+  
+  stress<-c(wild_stress[grep(pattern = years[[i]], x = wild_stress)], wild_chi[grep(pattern = years[[i]], wild_chi)])
+  
+  chi_stack<-rast(c(stress))
+
+  chi_sum<-app(chi_stack, sum)
+
+  chi_final<-chi_sum
+  chi_final[chi_final>0]<-1 # changing not wilderness to 1
+
+  writeRaster(chi_final, paste0(here("output_data/HFP/wilderness/direct_wilderness/Direct_high_impact_10perc_"), years[[i]],".tif"))
+  
+}
+  
+  
+
+
+```
+
+
+
+
+Values of 1 above indicate areas that are not wilderness, values of 0 indicate wilderness.
+
+
+The final layers will then be the stoppable human threat across years.
+
+```{r}
+test<-rast(here("output_data/HFP/wilderness/direct_wilderness/Direct_high_impact_10perc_2013.tif"))
+```
+
+
+
