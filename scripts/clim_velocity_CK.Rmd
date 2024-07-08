@@ -1,0 +1,145 @@
+---
+title: "Untitled"
+author: "Caitie"
+date: "2022-08-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Libraries
+
+```{r}
+library(devtools)
+#devtools::install_github("JorGarMol/VoCC")
+library(VoCC)
+#vignette("vocc")
+
+library(ncdf4)
+library(raster)
+
+library(gdalUtils)
+
+library(sf)
+library(here)
+library(tidyverse)
+```
+
+# Downlaod data
+
+```{r}
+url<-"https://www.metoffice.gov.uk/hadobs/hadisst/data/HadISST_sst.nc.gz"
+destfile<- here("raw_data/Climate_velocity/HadISST_sst.nc.gz")
+download.file(url,destfile)
+gunzip(destfile)
+unzip_filename <- here("raw_data/Climate_velocity/HadISST_sst.nc")
+data <- nc_open(unzip_filename)
+```
+
+```{r}
+sst_brick<-brick(unzip_filename)
+```
+
+```{r}
+years<-c(1901:2020)
+
+for(i in 1:length(years)){
+
+sub_x<-subset(x = names(sst_brick), grepl(years[i], names(sst_brick))) 
+sub_sst<-subset(sst_brick, sub_x)
+sub_sst_mean<-mean(sub_sst, na.rm = T)
+
+writeRaster(sub_sst_mean, here(paste0("raw_data/Climate_velocity/SST_",years[[i]],".tif")), overwrite = T)
+}
+
+```
+
+
+# START HERE AFTER INITIAL LOOP
+
+```{r}
+sst_files<-list.files(here("raw_data/Climate_velocity"), pattern = ".tif", full.names = T)
+sst_files<-sst_files[!grepl(".aux", sst_files)]
+
+sst<-stack(sst_files)
+```
+
+```{r}
+tr <- tempTrend(sst, th = 10)
+sg <- spatGrad(sst, th = 0.0001, projected = FALSE)
+v <- gVoCC(tr, sg)
+vel <- v[[1]] # km/yr
+ang <- v[[2]] # degrees
+```
+
+
+```{r}
+unzip(here("raw_data/WDPA/Clean_WDPA_Sept2022.zip"), exdir = here("raw_data/WDPA"))
+
+wdpa<-st_read(here("raw_data/WDPA/Clean_WDPA_Sept2022.shp"))
+
+sub_wdpa<- wdpa %>% 
+  filter(PA_DEF != "OECM",
+         MARINE == "marine") %>% 
+ # mutate(area_km2 = as.numeric(st_area(.))/1e-6) %>% 
+  #dplyr::select(WDPAID, NAME, DESIG, PA_DEF, IUCN_CA, STATUS_, ISO3, AREA_KM, MARINE) %>% 
+  st_make_valid(.)
+
+sub_wdpa2<-sub_wdpa[!st_is_empty(sub_wdpa),,drop=FALSE]
+
+```
+
+
+
+```{r}
+vel_proj<-raster(here("raw_data/Climate_velocity/vel2.tif"))
+wdpa_extract<-exactextractr::exact_extract(vel_proj, sub_wdpa2, "mean", progress = T)
+```
+
+Climate velocity is km/year
+
+```{r}
+wdpa_vocc<-cbind(sub_wdpa2, wdpa_extract) %>% 
+  rename(ClimVelocity_km_yr = wdpa_extract)
+```
+
+# Calculate PA area
+
+```{r}
+wdpa_area<-sub_wdpa2 %>% 
+  filter(PA_DEF != "OECM",
+         MARINE == "marine") %>% 
+  st_transform(., "ESRI:54009") %>% 
+  mutate(area_km2 = as.numeric(st_area(.))/1e-6) %>% 
+  as.data.frame() %>% 
+  dplyr::select(-geometry) %>% 
+  dplyr::select(area_km2)
+
+```
+
+```{r}
+done<-cbind(wdpa_vocc, wdpa_area)
+
+test<-done %>% 
+  dplyr::select(-geometry)
+  
+test2<-table(test$WDPAID)
+
+```
+
+```{r}
+test<-done %>% 
+  filter(is.na(ClimVelocity_km_yr) == T)
+
+test2<-done %>% 
+  filter(is.na(ClimVelocity_km_yr) == F)
+
+```
+
+
+```{r}
+st_write(done, here("output_data/Climate_velocity/WDPA_marine_climate_velocity.shp"), delete_layer = TRUE)
+```
+
