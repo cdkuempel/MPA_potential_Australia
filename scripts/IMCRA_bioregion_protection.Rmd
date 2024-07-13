@@ -79,6 +79,7 @@ strict_imcra<-st_intersection(strict, imcra_diss) %>%
   mutate(ecoprotec = as.numeric(st_area(.))*1e-6, 
          prop_strict = ecoprotec/meso_area_km2) %>% 
   st_cast(., "POLYGON")
+
 non_strict_imcra<-st_intersection(non_strict, imcra_diss) %>% 
   st_make_valid(.) %>% 
   mutate(ecoprotec = as.numeric(st_area(.))*1e-6, 
@@ -100,10 +101,114 @@ st_write(non_strict_imcra, here("output_data/Non_strict_imcra_intersect.shp"), a
 # HERE YOU WOULD THEN REPEAT FOR THE CORRECTED ONE ONCE YOU HAVE DONE THE HUMAN FOOTPRINT CORRECTIONS
 
 # CAPAD corrected
+## combine into one data set with each year 
+```{r}
+base<-st_read(here("output_data/Capad_adjusted/capad_adjust_2003.shp"))
 
-Strict corrected
+capad_files <- list.files(here("output_data/Capad_adjusted"), pattern = "capad_adjust", full.names = TRUE)
 
-Non-strict corrected
+capad_files2<- capad_files[grep("shp", capad_files)]
+
+years<- c(2004:2013)
+
+for(i in 1:length(years)){
+  print(years[[i]])
+  sub_capad<- st_read(capad_files2[grep(years[[i]],capad_files2)])
+
+  select_year <- sub_capad[sub_capad$Year == years[[i]],]
+  updated_capad <- rbind(base,select_year)
+  base <- updated_capad
+}
+
+# Save the combined shapefile
+st_write(capad_2003, here("output_data/Capad_adjusted/All_capad_adjusted.shp"), append = FALSE)
+```
+
+
+```{r}
+base_strict<-st_read(here("output_data/Capad_adjusted/strict_adjust_2003.shp"))
+
+strict_files <- list.files(here("output_data/Capad_adjusted"), pattern = "strict_adjust", full.names = TRUE)
+
+strict_only <- strict_files[!grepl("non",strict_files)]
+  
+strict_files2<- strict_only[grep("shp", strict_only)]
+
+
+years<- c(2004:2013)
+
+for(i in 1:length(years)){
+  print(years[[i]])
+  sub_strict<- st_read(strict_files2[grep(years[[i]],strict_files2)])
+
+  select_year <- sub_strict[sub_strict$Year == years[[i]],]
+  updated_strict <- rbind(base_strict,select_year)
+  base_strict <- updated_strict
+}
+
+# Save the combined shapefile
+st_write(base_strict, here("output_data/Capad_adjusted/All_strict_adjusted.shp"), append = FALSE)
+```
+
+```{r}
+base_non<-st_read(here("output_data/Capad_adjusted/non_strict_adjust_2003.shp"))
+
+non_strict_files <- list.files(here("output_data/Capad_adjusted"), pattern = "non_strict_adjust", full.names = TRUE)
+  
+non_strict_files2<- non_strict_files[grep("shp", non_strict_files)]
+
+
+non_years<- c(2004:2013)
+
+for(i in 1:length(years)){
+  print(years[[i]])
+  sub_non<- st_read(non_strict_files2[grep(years[[i]],non_strict_files2)])
+
+  select_year <- sub_non[sub_non$Year == years[[i]],]
+  updated_non <- rbind(base_non,select_year)
+  base_non <- updated_non
+}
+
+# Save the combined shapefile
+st_write(base_non, here("output_data/Capad_adjusted/All_non_strict_adjusted.shp"), append = FALSE)
+```
+
+```{r}
+capad_adjust<- st_read(here("output_data/Capad_adjusted/All_capad_adjusted.shp"))
+strict_adjust<- st_read(here("output_data/Capad_adjusted/All_strict_adjusted.shp"))
+non_strict_adjust<- st_read(here("output_data/Capad_adjusted/All_non_strict_adjusted.shp"))
+```
+
+
+```{r}
+
+adjust_capad_imcra<-st_intersection(capad_adjust, imcra_diss) %>% 
+  st_make_valid(.) %>% 
+  mutate(ecoprotec = as.numeric(st_area(.))*1e-6,
+         prop_all = ecoprotec/meso_area_km2) %>% #mutate is to make a new column. 
+  st_cast(., "POLYGON")
+
+adjust_strict_imcra<-st_intersection(strict_adjust, imcra_diss) %>% 
+  st_make_valid(.) %>% 
+  mutate(ecoprotec = as.numeric(st_area(.))*1e-6, 
+         prop_strict = ecoprotec/meso_area_km2) %>% 
+  st_cast(., "POLYGON")
+
+adjust_non_strict_imcra<-st_intersection(non_strict_adjust, imcra_diss) %>% 
+  st_make_valid(.) %>% 
+  mutate(ecoprotec = as.numeric(st_area(.))*1e-6, 
+         prop_non_strict = ecoprotec/meso_area_km2)%>% 
+  st_cast(., "POLYGON")
+
+st_write(adjust_capad_imcra, here("output_data/IMCRA_intersect_adjust/Adjust_all_capad_imcra_intersect.shp"), append = FALSE)
+
+
+st_write(adjust_strict_imcra, here("output_data/IMCRA_intersect_adjust/Adjust_strict_imcra_intersect.shp"), append = FALSE)
+
+
+st_write(adjust_non_strict_imcra, here("output_data/IMCRA_intersect_adjust/Adjust_non_strict_imcra_intersect.shp"), append = FALSE)
+```
+
 
 # Calculate ecoregion protected
 
