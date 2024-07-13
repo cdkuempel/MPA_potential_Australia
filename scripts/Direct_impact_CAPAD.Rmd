@@ -1,0 +1,73 @@
+---
+title: "Untitled"
+author: "Jade"
+date: "2024-07-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Load in EEZ data 
+```{r}
+eez<- vect(here("raw_data/EEZ/au_eez_pol_april2022.shp"))
+
+eez_project <- project(eez, "epsg:3577")
+
+writeVector(eez_project, here("output_data/projected_eez.shp"), overwrite = FALSE)
+#save as a reprojected file 
+
+project_eez <- vect(here("output_data/projected_eez.shp"))
+#read in projected layer 
+```
+
+#Set up for creating adjusted capad data sets 
+```{r}
+years<- c(2004:2012)
+
+hfp_files<- list.files(here("raw_data/Human_footprint"),"Direct_high_impact",full.names = TRUE)
+
+capad_files<- list.files(here("output_data/Capad_baseline"), "capad_baseline", full.names = TRUE)
+capad_files2<- capad_files[grep("shp", capad_files)]
+
+strict_files<- list.files(here("output_data/Capad_baseline"), "Strict_baseline", full.names = TRUE)
+strict_files2<- strict_files[grep("shp", strict_files)]
+
+non_strict_files<- list.files(here("output_data/Capad_baseline"), "Non_strict_baseline", full.names = TRUE)
+non_strict_files2<- non_strict_files[grep("shp", non_strict_files)]
+```
+
+
+#create adjusted capad data sets 
+```{r}
+for(i in 1:length(years)){
+print(years[[i]])  
+sub_hfp<- rast(hfp_files[grep(years[[i]],hfp_files)])
+
+project_impact<- project(sub_hfp, "epsg:3577")
+impact_clip<- crop(project_impact, project_eez, mask = TRUE)
+impact_poly<- as.polygons(impact_clip)
+
+sub_capad<- vect(capad_files2[grep(years[[i]],capad_files2)])
+capad_intersect<- intersect(sub_capad, impact_poly)
+capad_adjust<- erase(sub_capad,capad_intersect)
+
+sub_strict<- vect(strict_files2[grep(years[[i]],strict_files2)])
+strict_intersect<- intersect(sub_strict, impact_poly)
+strict_adjust<- erase(sub_strict,strict_intersect)
+
+sub_non_strict<- vect(non_strict_files2[grep(years[[i]],non_strict_files2)])
+non_strict_intersect<- intersect(sub_non_strict, impact_poly)
+non_strict_adjust<- erase(sub_non_strict,non_strict_intersect)
+
+writeVector(capad_adjust,here(paste0("output_data/Capad_adjusted/capad_adjust_", years[[i]],".shp")), overwrite = FALSE)
+
+writeVector(strict_adjust,here(paste0("output_data/Capad_adjusted/strict_adjust_", years[[i]],".shp")), overwrite = FALSE)
+
+writeVector(non_strict_adjust,here(paste0("output_data/Capad_adjusted/non_strict_adjust_", years[[i]],".shp")), overwrite = FALSE)
+
+}
+```
+
+
