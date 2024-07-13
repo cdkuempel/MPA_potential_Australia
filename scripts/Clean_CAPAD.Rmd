@@ -51,7 +51,7 @@ st_write(capad_diss, here("output_data/Capad_baseline/All_MPA_baseline.shp"), ap
 ##All by year 
 
 ```{r}
-years<-c(1980:2022)
+years<-min(capad$Year):max(capad$Year)
 
 for(i in 1:length(years)){
   print(years[[i]])
