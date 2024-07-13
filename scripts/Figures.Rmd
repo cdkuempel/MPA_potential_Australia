@@ -37,7 +37,7 @@ pe_long <- pivot_longer(pe, cols= c("CAPAD_PE", "Strict_PE", "Non_strict_PE"),
                          values_to = "PE")
 
 pe_long<- pe_long%>% 
-  select(-c(CAPAD_N,Strict_N,Non_strict_N))
+  dplyr::select(-c(CAPAD_N,Strict_N,Non_strict_N))
 ```
 
 ##Plot
@@ -61,11 +61,51 @@ ggplot(pe_long, aes(x = Year, y = PE, col = PE_type)) +
 ggsave(here("figures/All_PAs_Protection_equality.png"), width = 10, height= 6)
 ```
 
+# Plot corrected PE through time 
+
+```{r}
+pe_corrected<-read_csv(here("output_data/results/PE_corrected_calculations.csv"))
+```
+
+##Create new data frame for PE
+```{r}
+pe_corrected_long <- pivot_longer(pe_corrected, cols= c("CAPAD_PE", "Strict_PE", "Non_strict_PE"),
+                         names_to = "PE_type",
+                         values_to = "PE")
+
+pe_corrected_long<- pe_long%>% 
+  dplyr::select(-c(CAPAD_N,Strict_N,Non_strict_N))
+```
+
+##Plot
+```{r}
+
+ggplot(pe_corrected_long, aes(x = Year, y = PE, col = PE_type)) +
+  geom_line() +
+  theme_bw() +
+  scale_colour_discrete(type = colPalette, labels = c("All MPAs", "Non-strict", "Strict")) +
+  labs(title = "Ecoregion Protection Equality",
+      y = "Protection equality",
+      x = "Year", 
+      col = "Protected area class")
+   
+
+```
+
+
+
+```{r}
+ggsave(here("figures/Corrected_Protection_equality.png"), width = 10, height= 6)
+```
+
+
 #Plot MPG 
 ##Load in data 
+
 ```{r}
 mpg<- read_csv(here("output_data/results/MPG_baseline_calculations.csv"))
 ```
+
 ##Create new data frame for MPG 
 ```{r}
 
@@ -73,7 +113,7 @@ mpg_long <- pivot_longer(mpg, cols= c("Capad_MPG", "Strict_MPG", "Non_Strict_MPG
                          names_to = "MPG_type",
                          values_to = "MPG")
 mpg_long<- mpg_long%>% 
-  select(-c(Capad_N,Strict_N,Non_Strict_N))
+  dplyr::select(-c(Capad_N,Strict_N,Non_Strict_N))
 
 ```
 
@@ -94,3 +134,40 @@ ggplot(mpg_long, aes(x = Year, y = MPG, col = MPG_type)) +
 ```{r}
 ggsave(here("figures/All_PAs_MPG.png"), width =10, height=6)
 ```
+
+
+
+#Plot corrected MPG
+```{r}
+mpg_corrected<- read_csv(here("output_data/results/MPG_corrected_calculations.csv"))
+```
+
+##Create new data frame for MPG 
+```{r}
+
+mpg_corrected_long <- pivot_longer(mpg_corrected, cols= c("Capad_MPG", "Strict_MPG", "Non_Strict_MPG"),
+                         names_to = "MPG_type",
+                         values_to = "MPG")
+mpg_corrected_long<- mpg_corrected_long%>% 
+  dplyr::select(-c(Capad_N,Strict_N,Non_Strict_N))
+
+```
+
+##Plot
+```{r}
+
+ggplot(mpg_corrected_long, aes(x = Year, y = MPG, col = MPG_type)) +
+  geom_line() +
+  theme_bw() +
+  scale_colour_discrete(type = colPalette, labels = c("All MPAs", "Non-strict", "Strict")) +
+  labs(title = "Mean Protection Gap",
+      y = "Mean Protection Gap",
+      x = "Year",
+      col = "Protected area class")
+   
+```
+
+```{r}
+ggsave(here("figures/Corrected_MPG.png"), width =10, height=6)
+```
+
