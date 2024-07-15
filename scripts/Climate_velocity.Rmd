@@ -42,39 +42,70 @@ data <- nc_open(filename)
 ```
 
 ```{r}
+#"https://www.metoffice.gov.uk/hadobs/hadisst/data/HadISST_sst.nc.gz"
+
+filename <- here("raw_data/Climate_velocity/HadISST_sst.nc")
+data <- nc_open(filename)
+```
+
+```{r}
 sst_brick<- brick(filename)
 ```
 
 #extract mean temp. per year
 ```{r}
-years<-c(2003:2013)
+years<-c(1916:2022)
 
 for(i in 1:length(years)){
 sub_x<-subset(x = names(sst_brick), grepl(years[i], names(sst_brick))) 
 sub_sst<-subset(x = sst_brick, sub_x)
 sub_sst_mean<-mean(sub_sst, na.rm = T)
 
-writeRaster(sub_sst_mean, here(paste0("raw_data/IMOS_temp/SST_",years[[i]],".tif")), overwrite = T)
+writeRaster(sub_sst_mean, here(paste0("raw_data/Climate_velocity/SST_",years[[i]],".tif")), overwrite = T)
 }
 
 ```
 
 
-
+#create rast of mean temps
 ```{r}
-sst_files<-list.files(here("raw_data/IMOS_temp"), pattern = ".tif", full.names = T)
-sst_files<-sst_files[!grepl(".aux", sst_files)]
+sst_files<-list.files(here("raw_data/Climate_velocity"), pattern = ".tif", full.names = T)
 
-sst<-c(sst_files)
+sst<-rast(sst_files)
 
-n <- seq(ymd('2003-12-31'),ymd('2013-12-31'),by ='1 year')
-
-sst <- rts(sst, n)
 ```
 
+#find velocity
 ```{r}
 ve <- gVelocity(sst)
+
+#plot(ve)
+```
+```{r}
+test<- rast(here("vel2.tif"))
+
+plot(test)
 ```
 
 
+#fit to aus data 
+```{r}
+ve_project<- project(ve, "epsg:3577")
+
+#load in eez 
+eez<- st_read(here("output_data/projected_eez.shp"))
+
+ve_clip<- crop(ve_project, eez, mask = TRUE)
+
+#plot(ve_clip)
+```
+
+
+
+```{r}
+#load in capad 
+capad<- 
+
+capad_extract<-exactextractr::exact_extract(ve_clip, capad, "mean", progress = T)
+```
 
