@@ -121,7 +121,7 @@ for(i in 1:length(years)){
 }
 
 # Save the combined shapefile
-st_write(capad_2003, here("output_data/Capad_adjusted/All_capad_adjusted.shp"), append = FALSE)
+st_write(base, here("output_data/Capad_adjusted/All_capad_adjusted.shp"), append = FALSE)
 ```
 
 
