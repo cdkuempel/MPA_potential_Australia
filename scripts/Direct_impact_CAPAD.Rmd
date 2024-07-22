@@ -9,6 +9,15 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
+
+library(sf)
+library(here)
+library(tidyverse)
+library(lubridate)
+library(terra)
+```
+
 #Load in EEZ data 
 ```{r}
 eez<- vect(here("raw_data/EEZ/au_eez_pol_april2022.shp"))
@@ -24,7 +33,7 @@ project_eez <- vect(here("output_data/projected_eez.shp"))
 
 #Set up for creating adjusted capad data sets 
 ```{r}
-years<- c(2004:2012)
+years<- c(2003:2013)
 
 hfp_files<- list.files(here("raw_data/Human_footprint"),"Direct_high_impact",full.names = TRUE)
 
@@ -41,25 +50,32 @@ non_strict_files2<- non_strict_files[grep("shp", non_strict_files)]
 
 #create adjusted capad data sets 
 ```{r}
-i = 1
+i = 1 
 for(i in 1:length(years)){
 print(years[[i]])  
 sub_hfp<- rast(hfp_files[grep(years[[i]],hfp_files)])
 
+#get the human impact data
 project_impact<- project(sub_hfp, "epsg:3577")
 impact_clip<- crop(project_impact, project_eez, mask = TRUE)
 impact_poly<- as.polygons(impact_clip)
 
+#remove intersect between hfp and capad 
 sub_capad<- vect(capad_files2[grep(years[[i]],capad_files2)])
-capad_intersect<- intersect(sub_capad, impact_poly)
+capad_intersect<- vect(intersect(sub_capad, impact_poly))
 capad_adjust<- erase(sub_capad,capad_intersect)
 
+#update the area column 
+new_capad_area<- sum(expanse(capad_adjust))
+sub_capad$area_km2[sub_capad$Year==years[[i]]] <- as.numeric(new_capad_area)
+
+
 sub_strict<- vect(strict_files2[grep(years[[i]],strict_files2)])
-strict_intersect<- intersect(sub_strict, impact_poly)
+strict_intersect<- vect(intersect(sub_strict, impact_poly))
 strict_adjust<- erase(sub_strict,strict_intersect)
 
 sub_non_strict<- vect(non_strict_files2[grep(years[[i]],non_strict_files2)])
-non_strict_intersect<- intersect(sub_non_strict, impact_poly)
+non_strict_intersect<- vect(intersect(sub_non_strict, impact_poly))
 non_strict_adjust<- erase(sub_non_strict,non_strict_intersect)
 
 writeVector(capad_adjust,here(paste0("output_data/Capad_adjusted/capad_adjust_", years[[i]],".shp")), overwrite = FALSE)
@@ -71,4 +87,8 @@ writeVector(non_strict_adjust,here(paste0("output_data/Capad_adjusted/non_strict
 }
 ```
 
+
+```{r}
+plot(capad_adjust)
+```
 
