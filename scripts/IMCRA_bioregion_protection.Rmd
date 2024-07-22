@@ -40,14 +40,14 @@ imcra_diss<-imcra %>%
 All
 
 ```{r}
-capad<-st_read(here("output_data/All_MPA_baseline.shp"))
+capad<-st_read(here("output_data/Capad_baseline/All_MPA_baseline.shp"))
 ```
 
 
 Strict
 
 ```{r}
-strict<-st_read(here("output_data/Strict_baseline.shp")) %>% 
+strict<-st_read(here("output_data/Capad_baseline/Strict_baseline.shp")) %>% 
     filter(!is.na(Year) == TRUE) #perhaps think of another way to deal with missing dates
 
 ```
@@ -56,7 +56,7 @@ strict<-st_read(here("output_data/Strict_baseline.shp")) %>%
 Non-strict
 
 ```{r}
-non_strict<-st_read(here("output_data/Non_strict_baseline.shp"))
+non_strict<-st_read(here("output_data/Capad_baseline/Non_strict_baseline.shp"))
 ```
 
 
