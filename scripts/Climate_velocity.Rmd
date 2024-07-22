@@ -17,6 +17,9 @@ library(climetrics)
 library(terra)
 library(raster)
 
+#install.packages("exactextractr")
+library(exactextractr)
+
 #install.packages("ncdf4")
 library(ncdf4)
 
@@ -33,23 +36,20 @@ library(tidyverse)
 
 
 #Download data 
-Available from: https://s3-ap-southeast-2.amazonaws.com/aws-wps-prod/jobs/c7946c43-086c-46d0-9716-dc79c46c42b5/IMOS_aggregation_20240629T073820Z.zip
-https://catalogue-imos.aodn.org.au/geonetwork/srv/eng/catalog.search#/metadata/d6f49c4a-8b75-4d05-acd4-b9c085bf4de0
-```{r}
-filename<- (here("raw_data/IMOS_temp/IMOS_aggregation_20240629T073820Z.nc"))
 
-data <- nc_open(filename)
+```{r}
+#NEW SST 
+#https://www.metoffice.gov.uk/hadobs/hadisst/data/download.html
+
+filename2<- here("raw_data/Climate_velocity/HadISST/HadISST_sst.nc")
+data <- nc_open(filename2)
 ```
 
 ```{r}
-#"https://www.metoffice.gov.uk/hadobs/hadisst/data/HadISST_sst.nc.gz"
 
-filename <- here("raw_data/Climate_velocity/HadISST_sst.nc")
-data <- nc_open(filename)
-```
+sst_brick <- brick(filename2)
 
-```{r}
-sst_brick<- brick(filename)
+plot(sst_brick)
 ```
 
 #extract mean temp. per year
@@ -61,7 +61,7 @@ sub_x<-subset(x = names(sst_brick), grepl(years[i], names(sst_brick)))
 sub_sst<-subset(x = sst_brick, sub_x)
 sub_sst_mean<-mean(sub_sst, na.rm = T)
 
-writeRaster(sub_sst_mean, here(paste0("raw_data/Climate_velocity/SST_",years[[i]],".tif")), overwrite = T)
+writeRaster(sub_sst_mean, here(paste0("raw_data/Climate_velocity/HadISST/SST_",years[[i]],".tif")), overwrite = T)
 }
 
 ```
@@ -69,43 +69,82 @@ writeRaster(sub_sst_mean, here(paste0("raw_data/Climate_velocity/SST_",years[[i]
 
 #create rast of mean temps
 ```{r}
-sst_files<-list.files(here("raw_data/Climate_velocity"), pattern = ".tif", full.names = T)
+sst_files<-list.files(here("raw_data/Climate_velocity/HadISST"), pattern = ".tif", full.names = T)
 
-sst<-rast(sst_files)
+sst<-stack(sst_files)
 
+start_date <- as.Date("1916-12-31")
+end_date<- as.Date("2022-12-31")
+
+time<- seq.Date(start_date, end_date, by = "year")
+
+sst_byyear <- rts(sst, time)
 ```
+
 
 #find velocity
 ```{r}
-ve <- gVelocity(sst)
+ve <- gVelocity(sst_byyear)
 
-#plot(ve)
+plot(ve) 
+
 ```
-```{r}
-test<- rast(here("vel2.tif"))
 
-plot(test)
+```{r}
+#trial 
+
+start_date2 <- as.Date("2010-12-31")
+end_date2<- as.Date("2019-12-31")
+
+time2<- seq.Date(start_date, end_date, by = "year")
+
+sst_files2<-list.files(here("raw_data/Climate_velocity/HadISST"), pattern = "SST_201", full.names = T)
+
+sst2<-stack(sst_files)
+sst_test <- rts(sst2, time2)
+
+testve<- gVelocity(sst_test)
+
+plot(testve)
 ```
 
 
 #fit to aus data 
 ```{r}
-ve_project<- project(ve, "epsg:3577")
+ve_rast <- rast(ve)
+ve_project<- project(ve_rast, "epsg:3577")
 
 #load in eez 
 eez<- st_read(here("output_data/projected_eez.shp"))
 
 ve_clip<- crop(ve_project, eez, mask = TRUE)
 
-#plot(ve_clip)
+plot(ve_clip)
 ```
 
+#Resample to fit hf resolution 
+```{r}
+hf<- rast(here("raw_data/Human_footprint/Direct_high_impact_10perc_2003.tif"))
+
+hf_project <- project(hf,"epsg:3577")
+
+ve2<- terra::resample(ve_clip, hf_project, method = "bilinear")
+
+```
 
 
 ```{r}
 #load in capad 
-capad<- 
+strict<- st_read(here("output_data/Capad_baseline/Strict_baseline.shp"))
 
-capad_extract<-exactextractr::exact_extract(ve_clip, capad, "mean", progress = T)
+non_strict<-st_read(here("output_data/Capad_baseline/Non_strict_baseline.shp"))
+
+capad_extract<-exactextractr::exact_extract(ve_clip, strict, "mean", progress = T, append_cols = T)
+```
+
+```{r}
+view(capad_extract)
+
+plot(capad_extract)
 ```
 
