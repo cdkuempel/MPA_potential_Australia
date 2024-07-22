@@ -15,7 +15,7 @@ eez<- vect(here("raw_data/EEZ/au_eez_pol_april2022.shp"))
 
 eez_project <- project(eez, "epsg:3577")
 
-writeVector(eez_project, here("output_data/projected_eez.shp"), overwrite = FALSE)
+#writeVector(eez_project, here("output_data/projected_eez.shp"), overwrite = FALSE)
 #save as a reprojected file 
 
 project_eez <- vect(here("output_data/projected_eez.shp"))
@@ -41,6 +41,7 @@ non_strict_files2<- non_strict_files[grep("shp", non_strict_files)]
 
 #create adjusted capad data sets 
 ```{r}
+i = 1
 for(i in 1:length(years)){
 print(years[[i]])  
 sub_hfp<- rast(hfp_files[grep(years[[i]],hfp_files)])
