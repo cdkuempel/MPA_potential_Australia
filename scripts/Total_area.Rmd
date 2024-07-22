@@ -15,9 +15,10 @@ library(sf)
 library(here)
 library(tidyverse)
 library(lubridate)
-library(ggplot2)
+
 ```
 
+#Baseline areas
 ```{r}
 capad <- st_read(here("output_data/Capad_baseline/All_MPA_baseline.shp"))
 strict<-  st_read(here("output_data/Capad_baseline/Strict_baseline.shp"))
@@ -33,7 +34,6 @@ capad_area <-
   select(-geometry)%>%
   mutate(total_area_km2 = cumsum(area_km2))
 
-
 view(capad_area)
 
 ```
@@ -46,7 +46,78 @@ strict_area <-
   select(-geometry)%>%
   mutate(total_area_km2 = cumsum(area_km2))
 
-
 view(strict_area)
 ```
+
+
+```{r}
+non_strict_area <-
+  non_strict %>% 
+  as.data.frame(.)%>% 
+  select(-geometry)%>%
+  mutate(total_area_km2 = cumsum(area_km2))
+
+view(non_strict_area)
+```
+
+```{r}
+write.csv(capad_area, here("output_data/Total_area/Baseline_capad_area.csv"))
+
+write.csv(strict_area, here("output_data/Total_area/Baseline_strict_area.csv"))
+
+write.csv(non_strict_area, here("output_data/Total_area/Baseline_non_strict_area.csv"))
+
+```
+
+
+#Adjusted areas
+```{r}
+capad_adjust <- st_read(here("output_data/Capad_adjusted/All_capad_adjusted.shp"))
+strict_adjust<-  st_read(here("output_data/Capad_adjusted/All_strict_adjusted.shp"))
+non_strict_adjust <- st_read(here("output_data/Capad_adjusted/All_non_strict_adjusted.shp"))
+
+```
+
+```{r}
+
+adjust_capad_area <-
+  capad_adjust %>% 
+  as.data.frame(.)%>% 
+  select(-geometry)%>%
+  mutate(total_area_km2 = cumsum(area_km2))
+
+```
+
+
+```{r}
+adjust_strict_area <-
+  strict_adjust %>% 
+  as.data.frame(.)%>% 
+  select(-geometry)%>%
+  mutate(total_area_km2 = cumsum(area_km2))
+
+```
+
+
+```{r}
+adjust_non_strict_area <-
+  non_strict_adjust %>% 
+  as.data.frame(.)%>% 
+  select(-geometry)%>%
+  mutate(total_area_km2 = cumsum(area_km2))
+
+view(adjust_non_strict_area)
+```
+
+
+```{r}
+write.csv(adjust_capad_area, here("output_data/Total_area/Adjusted_capad_area.csv"))
+
+write.csv(adjust_strict_area, here("output_data/Total_area/Adjusted_strict_area.csv"))
+
+write.csv(adjust_non_strict_area, here("output_data/Total_area/Adjusted_non_strict_area.csv"))
+
+```
+
+
 
