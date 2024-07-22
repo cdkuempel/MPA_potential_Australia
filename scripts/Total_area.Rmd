@@ -1,0 +1,52 @@
+---
+title: "Untitled"
+author: "Jade"
+date: "2024-07-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Required packages 
+```{r}
+library(sf)
+library(here)
+library(tidyverse)
+library(lubridate)
+library(ggplot2)
+```
+
+```{r}
+capad <- st_read(here("output_data/Capad_baseline/All_MPA_baseline.shp"))
+strict<-  st_read(here("output_data/Capad_baseline/Strict_baseline.shp"))
+non_strict <- st_read(here("output_data/Capad_baseline/Non_strict_baseline.shp"))
+view(strict)
+```
+
+```{r}
+
+capad_area <-
+  capad %>% 
+  as.data.frame(.)%>% 
+  select(-geometry)%>%
+  mutate(total_area_km2 = cumsum(area_km2))
+
+
+view(capad_area)
+
+```
+
+
+```{r}
+strict_area <-
+  strict %>% 
+  as.data.frame(.)%>% 
+  select(-geometry)%>%
+  mutate(total_area_km2 = cumsum(area_km2))
+
+
+view(strict_area)
+```
+
