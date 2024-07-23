@@ -88,13 +88,15 @@ non_strict_imcra<-st_intersection(non_strict, imcra_diss) %>%
 ```
 
 ```{r}
-st_write(capad_imcra, here("output_data/All_capad_imcra_intersect.shp"), append = FALSE)
+st_write(capad_imcra, here("output_data/IMCRA_intersect/All_capad_imcra_intersect.shp"), append = FALSE)
 
 
-st_write(strict_imcra, here("output_data/Strict_imcra_intersect.shp"), append = FALSE)
+
+st_write(strict_imcra, here("output_data/IMCRA_intersect/Strict_imcra_intersect.shp"), append = FALSE)
+view(st_read(here("output_data/IMCRA_intersect/Non_strict_imcra_intersect.shp")))
 
 
-st_write(non_strict_imcra, here("output_data/Non_strict_imcra_intersect.shp"), append = FALSE)
+st_write(non_strict_imcra, here("output_data/IMCRA_intersect/Non_strict_imcra_intersect.shp"), append = FALSE)
 ```
 
 
@@ -205,6 +207,7 @@ st_write(adjust_capad_imcra, here("output_data/IMCRA_intersect_adjust/Adjust_all
 
 st_write(adjust_strict_imcra, here("output_data/IMCRA_intersect_adjust/Adjust_strict_imcra_intersect.shp"), append = FALSE)
 
+view(st_read(here("output_data/IMCRA_intersect_adjust/Adjust_non_strict_imcra_intersect.shp")))
 
 st_write(adjust_non_strict_imcra, here("output_data/IMCRA_intersect_adjust/Adjust_non_strict_imcra_intersect.shp"), append = FALSE)
 ```
