@@ -33,6 +33,13 @@ imcra_diss<-imcra %>%
   group_by(MESO_NAME) %>% 
   summarise(GIS_AREA_KM2 = sum(AREA_KM2, na.rm = T)) %>% 
   mutate(meso_area_km2 = as.numeric(st_area(.))*1e-6)
+
+st_write(imcra_diss, here("output_data/IMCRA_diss.shp"))
+```
+
+```{r}
+imcra_diss <- st_read(here("output_data/IMCRA_diss.shp"))
+
 ```
 
 # CAPAD baseline
@@ -91,9 +98,9 @@ non_strict_imcra<-st_intersection(non_strict, imcra_diss) %>%
 st_write(capad_imcra, here("output_data/IMCRA_intersect/All_capad_imcra_intersect.shp"), append = FALSE)
 
 
-
 st_write(strict_imcra, here("output_data/IMCRA_intersect/Strict_imcra_intersect.shp"), append = FALSE)
-view(st_read(here("output_data/IMCRA_intersect/Non_strict_imcra_intersect.shp")))
+
+view(st_read(here("output_data/IMCRA_intersect/All_capad_imcra_intersect.shp")))
 
 
 st_write(non_strict_imcra, here("output_data/IMCRA_intersect/Non_strict_imcra_intersect.shp"), append = FALSE)
@@ -181,40 +188,143 @@ strict_adjust<- st_read(here("output_data/Capad_adjusted/All_strict_adjusted.shp
 non_strict_adjust<- st_read(here("output_data/Capad_adjusted/All_non_strict_adjusted.shp"))
 ```
 
+##Calculate ecoregion protected 
+
+```{r}
+capad_files <- list.files(here("output_data/Capad_adjusted"), pattern = "capad_adjust_", full.names = TRUE)
+
+capad_files2<- capad_files[grep("shp", capad_files)]
+
+years<- c(2003:2013)
+i = 11
+for(i in 1:length(years)){
+  print(years[[i]])
+  sub_capad<- st_read(capad_files2[grep(years[[i]],capad_files2)])
+  
+  adjust_capad_imcra<-st_intersection(sub_capad, imcra_diss) %>% 
+  st_make_valid(.) %>%
+    mutate(ecoprotec = as.numeric(st_area(.))*1e-6,
+         prop_all = ecoprotec/meso_area_km2)  %>% 
+  st_cast(., "POLYGON")
+  
+  st_write(adjust_capad_imcra, here(paste0("output_data/IMCRA_intersect_adjust/capad_imcra_adjusted_",years[[i]],".shp")), append = FALSE)
+}
+
+plot(st_read(here("output_data/Capad_adjusted/capad_adjust_2007.shp")))
+```
+
+
+```{r}
+strict_files <- list.files(here("output_data/Capad_adjusted"), pattern = "strict_adjust", full.names = TRUE)
+
+strict_only <- strict_files[!grepl("non",strict_files)]
+  
+strict_files2<- strict_only[grep("shp", strict_only)]
+
+years<- c(2003:2013)
+i =1 
+for(i in 1:length(years)){
+  print(years[[i]])
+  sub_strict<- st_read(strict_files2[grep(years[[i]],strict_files2)])
+  
+  adjust_strict_imcra<-st_intersection(sub_strict, imcra_diss) %>% 
+  st_make_valid(.) %>%
+    mutate(ecoprotec = as.numeric(st_area(.))*1e-6,
+         prop_strict = ecoprotec/meso_area_km2)  %>% 
+  st_cast(., "POLYGON")
+  
+  st_write(adjust_strict_imcra, here(paste0("output_data/IMCRA_intersect_adjust/strict_imcra_adjusted_",years[[i]],".shp")), append = FALSE)
+}
+
+```
+
+
+```{r}
+non_strict_files <- list.files(here("output_data/Capad_adjusted"), pattern = "non_strict_adjust", full.names = TRUE)
+  
+non_strict_files2<- non_strict_files[grep("shp", non_strict_files)]
+
+years<- c(2003:2013)
+i = 11 
+for(i in 1:length(years)){
+  print(years[[i]])
+  sub_non_strict<- st_read(non_strict_files2[grep(years[[i]],non_strict_files2)])
+  
+  adjust_non_strict_imcra<-st_intersection(sub_non_strict, imcra_diss) %>% 
+  st_make_valid(.) %>%
+    mutate(ecoprotec = as.numeric(st_area(.))*1e-6,
+         prop_non_strict = ecoprotec/meso_area_km2)%>% 
+   # filter(st_geometry_type(.) !="LINESTRING")%>%
+    #filter(st_geometry_type(.) !="MULTILINESTRING")%>%
+  st_cast(.,"POLYGON")
+  
+  st_write(adjust_non_strict_imcra, here(paste0("output_data/IMCRA_intersect_adjust/non_strict_imcra_adjusted_",years[[i]],".shp")), append = FALSE)
+}
+
+```
+
+
+#Summarise to find total percentage of ecoregion protected 
+Baseline 
+
+```{r}
+strict_2022<- st_read(here("output_data/Capad_baseline/Full_strict_2022.shp"))
+
+non_strict_2022<- st_read(here("output_data/Capad_baseline/Full_non_strict_2022.shp"))
+
+```
 
 ```{r}
 
-adjust_capad_imcra<-st_intersection(capad_adjust, imcra_diss) %>% 
-  st_make_valid(.) %>% 
-  mutate(ecoprotec = as.numeric(st_area(.))*1e-6,
-         prop_all = ecoprotec/meso_area_km2) %>% #mutate is to make a new column. 
-  st_cast(., "POLYGON")
-
-adjust_strict_imcra<-st_intersection(strict_adjust, imcra_diss) %>% 
+strict_imcra_2022<-st_intersection(strict_2022, imcra_diss) %>% 
   st_make_valid(.) %>% 
   mutate(ecoprotec = as.numeric(st_area(.))*1e-6, 
          prop_strict = ecoprotec/meso_area_km2) %>% 
   st_cast(., "POLYGON")
 
-adjust_non_strict_imcra<-st_intersection(non_strict_adjust, imcra_diss) %>% 
+non_strict_imcra_2022<-st_intersection(non_strict_2022, imcra_diss) %>% 
   st_make_valid(.) %>% 
   mutate(ecoprotec = as.numeric(st_area(.))*1e-6, 
          prop_non_strict = ecoprotec/meso_area_km2)%>% 
   st_cast(., "POLYGON")
 
-st_write(adjust_capad_imcra, here("output_data/IMCRA_intersect_adjust/Adjust_all_capad_imcra_intersect.shp"), append = FALSE)
+st_write(strict_imcra_2022, here("output_data/results/Strict_fullnetwork_imcra_2022.shp"))
+
+st_write(non_strict_imcra_2022, here("output_data/results/Non_strict_fullnetwork_imcra_2022.shp"))
 
 
-st_write(adjust_strict_imcra, here("output_data/IMCRA_intersect_adjust/Adjust_strict_imcra_intersect.shp"), append = FALSE)
-
-view(st_read(here("output_data/IMCRA_intersect_adjust/Adjust_non_strict_imcra_intersect.shp")))
-
-st_write(adjust_non_strict_imcra, here("output_data/IMCRA_intersect_adjust/Adjust_non_strict_imcra_intersect.shp"), append = FALSE)
 ```
 
 
-# Calculate ecoregion protected
-
-Baseline
-
 Corrected
+
+```{r}
+correct_strict_2013<- st_read(here("output_data/Capad_adjusted/Full_strict_2013_corrected.shp"))
+
+correct_non_strict_2013<- st_read(here("output_data/Capad_adjusted/Full_non_strict_2013_corrected.shp"))
+
+```
+
+```{r}
+
+correct_strict_imcra_2013<-st_intersection(correct_strict_2013, imcra_diss) %>% 
+  st_make_valid(.) %>% 
+  mutate(ecoprotec = as.numeric(st_area(.))*1e-6, 
+         prop_strict = ecoprotec/meso_area_km2) %>% 
+  st_cast(., "POLYGON")
+
+correct_non_strict_imcra_2013<-st_intersection(correct_non_strict_2013, imcra_diss) %>% 
+  st_make_valid(.) %>% 
+  mutate(ecoprotec = as.numeric(st_area(.))*1e-6, 
+         prop_non_strict = ecoprotec/meso_area_km2)%>% 
+  st_cast(., "POLYGON")
+
+```
+##No. of ecoregions with protection greater than 30% goal 
+```{r}
+count_strict_base<- nrow(subset(strict_imcra_2022, strict_imcra_2022$prop_strict>= 0.3))
+#1 
+count_non_strict_base<- nrow(subset(non_strict_imcra_2022, non_strict_imcra_2022$prop_non_strict>= 0.3))
+#23
+```
+
