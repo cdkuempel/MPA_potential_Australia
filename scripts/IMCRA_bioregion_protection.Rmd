@@ -33,13 +33,6 @@ imcra_diss<-imcra %>%
   group_by(MESO_NAME) %>% 
   summarise(GIS_AREA_KM2 = sum(AREA_KM2, na.rm = T)) %>% 
   mutate(meso_area_km2 = as.numeric(st_area(.))*1e-6)
-
-st_write(imcra_diss, here("output_data/IMCRA_diss.shp"))
-```
-
-```{r}
-imcra_diss <- st_read(here("output_data/IMCRA_diss.shp"))
-
 ```
 
 # CAPAD baseline
@@ -196,7 +189,6 @@ capad_files <- list.files(here("output_data/Capad_adjusted"), pattern = "capad_a
 capad_files2<- capad_files[grep("shp", capad_files)]
 
 years<- c(2003:2013)
-i = 11
 for(i in 1:length(years)){
   print(years[[i]])
   sub_capad<- st_read(capad_files2[grep(years[[i]],capad_files2)])
@@ -205,12 +197,13 @@ for(i in 1:length(years)){
   st_make_valid(.) %>%
     mutate(ecoprotec = as.numeric(st_area(.))*1e-6,
          prop_all = ecoprotec/meso_area_km2)  %>% 
+     filter(st_geometry_type(.) !="LINESTRING")%>%
+    filter(st_geometry_type(.) !="MULTILINESTRING")%>%
   st_cast(., "POLYGON")
   
   st_write(adjust_capad_imcra, here(paste0("output_data/IMCRA_intersect_adjust/capad_imcra_adjusted_",years[[i]],".shp")), append = FALSE)
 }
 
-plot(st_read(here("output_data/Capad_adjusted/capad_adjust_2007.shp")))
 ```
 
 
@@ -245,7 +238,6 @@ non_strict_files <- list.files(here("output_data/Capad_adjusted"), pattern = "no
 non_strict_files2<- non_strict_files[grep("shp", non_strict_files)]
 
 years<- c(2003:2013)
-i = 11 
 for(i in 1:length(years)){
   print(years[[i]])
   sub_non_strict<- st_read(non_strict_files2[grep(years[[i]],non_strict_files2)])
@@ -254,8 +246,8 @@ for(i in 1:length(years)){
   st_make_valid(.) %>%
     mutate(ecoprotec = as.numeric(st_area(.))*1e-6,
          prop_non_strict = ecoprotec/meso_area_km2)%>% 
-   # filter(st_geometry_type(.) !="LINESTRING")%>%
-    #filter(st_geometry_type(.) !="MULTILINESTRING")%>%
+   filter(st_geometry_type(.) !="LINESTRING")%>%
+    filter(st_geometry_type(.) !="MULTILINESTRING")%>%
   st_cast(.,"POLYGON")
   
   st_write(adjust_non_strict_imcra, here(paste0("output_data/IMCRA_intersect_adjust/non_strict_imcra_adjusted_",years[[i]],".shp")), append = FALSE)
