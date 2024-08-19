@@ -1,0 +1,190 @@
+---
+title: "SLF analysis"
+author: "ALM Chauvenet"
+date: "2019-10-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r install and load packages}
+required_packages <- c(
+    "dplyr",
+    "ggplot2",
+    "tidyr",
+    "colorRamps",
+    "reshape",
+    "viridis",
+    "tidyverse",
+    "raster",
+    "data.table",
+    "effects",
+    "MuMIn",
+    "gridExtra",
+    "ggcorrplot",
+    "nlme",
+    "MASS",
+    "sf",
+    "sp",
+    "rasterVis",
+    "RStoolbox",
+    "rgbif",
+    "terra",
+    "tidyterra",
+    "ggpubr",
+    "cowplot",
+    "ggspatial",
+    "datapasta",
+    "here"
+)
+
+new.packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
+
+if (length(new.packages)) {
+    install.packages(new.packages)
+}
+lapply(required_packages, library, character.only = TRUE)
+```
+
+
+```{r initialize, include=FALSE}
+# Clear workspace
+rm(list=ls())
+gc() # garbage collection
+
+# Confirm Working Directory is correct
+getwd()
+workingdir <- "C:/Users/Jade/OneDrive - Griffith University/Documents/University/2024 - Dissertation/Data/masters/MPA_potential_Australia/scripts"
+setwd(workingdir)
+getwd()
+```
+
+
+```{r read data}
+list.files("./raw_data/Human_footprint/artisanal_fishing/data")
+
+library(terra)
+
+rastlist <- list.files(here("raw_data/Human_footprint/artisanal_fishing/data"), pattern='impact.tif$', all.files= T, full.names= T)
+data <- terra::rast(rastlist)
+
+
+```
+
+```{r}
+art <- rast(here("output_date/HFP/test/art.pred_NA.tif"))
+
+plot(art)
+```
+
+```{r calculate model}
+time <- c(2003:2013) 
+ 
+
+#remove this to be the whole world 
+e <- ext(-13025212.5592203, -11678935.3412575, -1430409.53180467, -252416.966087214)
+data_sm <- data %>% crop(e)
+
+
+lm_fun= function(x) {
+  if (length(which(is.na(x[1])))>0) {
+    c(NA,NA)
+  } else {
+    m = lm(x ~ time)
+    summary(m)$coefficients[c(1,2)]
+  }
+}
+annual_ave_stack.lm= app(data, lm_fun)
+
+
+
+predict.fun = function (x) {
+  if (length(which(is.na(x[1])))>0) {
+    NA
+  } else {
+    m = x[1] + x[2]*year
+    if(m<0) m <- 0
+    return(m)
+  }
+}
+
+pred.time <-c(2016:2022)
+for(i in pred.time){
+  print(i)
+  a <- Sys.time()
+  
+  year <- i
+  
+  pred = app(annual_ave_stack.lm,predict.fun)
+  
+  writeRaster(pred, here(paste0("output_data/HFP/artisanal_fishing/artisanal_fishing_impact_", year,".tif")), overwrite = TRUE)
+  
+  print(Sys.time()-a)
+}
+
+pred.time<- c(2014)
+for(i in pred.time){
+  print(i)
+  a <- Sys.time()
+  
+  year <- i
+  
+  pred = app(annual_ave_stack.lm,predict.fun)
+  
+  writeRaster(pred, here(paste0("output_data/HFP/artisanal_fishing/artisanal_fishing_impact_", year,".tif")), overwrite = TRUE)
+  
+  print(Sys.time()-a)
+}
+```
+
+```{r read data}
+list.files("./raw_data/Human_footprint/shipping/data")
+
+library(terra)
+
+rastlist <- list.files(here("raw_data/Human_footprint/shipping/data"), pattern='impact.tif$', all.files= T, full.names= T)
+data <- terra::rast(rastlist)
+
+time <- c(2003:2013) 
+ 
+
+lm_fun= function(x) {
+  if (length(which(is.na(x[1])))>0) {
+    c(NA,NA)
+  } else {
+    m = lm(x ~ time)
+    summary(m)$coefficients[c(1,2)]
+  }
+}
+annual_ave_stack_ship.lm= app(data, lm_fun)
+
+
+
+predict.fun = function (x) {
+  if (length(which(is.na(x[1])))>0) {
+    NA
+  } else {
+    m = x[1] + x[2]*year
+    if(m<0) m <- 0
+    return(m)
+  }
+}
+
+pred.time <-c(2014:2022)
+for(i in pred.time){
+  print(i)
+  a <- Sys.time()
+  
+  year <- i
+  
+  pred = app(annual_ave_stack_ship.lm,predict.fun)
+  
+  writeRaster(pred, here(paste0("output_data/HFP/shipping/shipping_impact_", year,".tif")), overwrite = TRUE)
+  
+  print(Sys.time()-a)
+}
+
+```
+
