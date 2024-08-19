@@ -70,22 +70,12 @@ library(terra)
 rastlist <- list.files(here("raw_data/Human_footprint/artisanal_fishing/data"), pattern='impact.tif$', all.files= T, full.names= T)
 data <- terra::rast(rastlist)
 
-
-```
-
-```{r}
-art <- rast(here("output_date/HFP/test/art.pred_NA.tif"))
-
-plot(art)
-```
-
-```{r calculate model}
 time <- c(2003:2013) 
  
 
 #remove this to be the whole world 
-e <- ext(-13025212.5592203, -11678935.3412575, -1430409.53180467, -252416.966087214)
-data_sm <- data %>% crop(e)
+#e <- ext(-13025212.5592203, -11678935.3412575, -1430409.53180467, -252416.966087214)
+#data_sm <- data %>% crop(e)
 
 
 lm_fun= function(x) {
@@ -110,7 +100,7 @@ predict.fun = function (x) {
   }
 }
 
-pred.time <-c(2016:2022)
+pred.time <-c(2014:2022)
 for(i in pred.time){
   print(i)
   a <- Sys.time()
@@ -124,19 +114,6 @@ for(i in pred.time){
   print(Sys.time()-a)
 }
 
-pred.time<- c(2014)
-for(i in pred.time){
-  print(i)
-  a <- Sys.time()
-  
-  year <- i
-  
-  pred = app(annual_ave_stack.lm,predict.fun)
-  
-  writeRaster(pred, here(paste0("output_data/HFP/artisanal_fishing/artisanal_fishing_impact_", year,".tif")), overwrite = TRUE)
-  
-  print(Sys.time()-a)
-}
 ```
 
 ```{r read data}
