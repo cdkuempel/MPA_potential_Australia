@@ -71,42 +71,100 @@ write.csv(non_strict_area, here("output_data/Total_area/Baseline_non_strict_area
 
 
 #Adjusted areas
+
 ```{r}
-capad_adjust <- st_read(here("output_data/Capad_adjusted/All_capad_adjusted.shp"))
-strict_adjust<-  st_read(here("output_data/Capad_adjusted/All_strict_adjusted.shp"))
-non_strict_adjust <- st_read(here("output_data/Capad_adjusted/All_non_strict_adjusted.shp"))
+
+capad_files <- list.files(here("output_data/Capad_adjusted"), pattern = "capad_adjust_", full.names = TRUE)
+
+  
+capad_files2<- capad_files[grep("shp", capad_files)]
+
+years<- c(2003:2013)
+
+adjust_capad_area<-data.frame(Year = NA, Capad_area = NA)
+
+for(i in 1:length(years)){
+  print(years[[i]])
+  y = years[[i]]
+  
+  sub_capad<- st_read(capad_files2[grep(years[[i]],capad_files2)])
+
+  capad_area <-
+  sub_capad %>% 
+  as.data.frame(.)%>% 
+  select(-geometry)%>%
+  mutate(total_area_km2 = cumsum(area_km2))%>%
+  filter(Year == max(sub_capad$Year))
+  
+  adjust_capad_area[i,"Year"]<-y
+  adjust_capad_area[i, "Capad_area"]<-capad_area$total_area_km2
+  
+}
 
 ```
 
+
+
 ```{r}
 
-adjust_capad_area <-
-  capad_adjust %>% 
+strict_files <- list.files(here("output_data/Capad_adjusted"), pattern = "strict_adjust", full.names = TRUE)
+
+strict_only <- strict_files[!grepl("non",strict_files)]
+  
+strict_files2<- strict_only[grep("shp", strict_only)]
+
+years<- c(2003:2013)
+
+adjust_strict_area<-data.frame(Year = NA, Strict_area = NA)
+
+for(i in 1:length(years)){
+  print(years[[i]])
+  y = years[[i]]
+  
+  sub_strict<- st_read(strict_files2[grep(years[[i]],strict_files2)])
+
+  strict_area <-
+  sub_strict %>% 
   as.data.frame(.)%>% 
   select(-geometry)%>%
-  mutate(total_area_km2 = cumsum(area_km2))
+  mutate(total_area_km2 = cumsum(area_km2))%>%
+  filter(Year == max(sub_strict$Year))
+  
+  adjust_strict_area[i,"Year"]<-y
+  adjust_strict_area[i, "Strict_area"]<-strict_area$total_area_km2
+  
+}
 
 ```
 
 
 ```{r}
-adjust_strict_area <-
-  strict_adjust %>% 
+non_strict_files <- list.files(here("output_data/Capad_adjusted"), pattern = "non_strict_adjust", full.names = TRUE)
+
+non_strict_files2 <- non_strict_files[grep("shp",non_strict_files)]
+  
+
+years<- c(2003:2013)
+
+adjust_non_strict_area<-data.frame(Year = NA, Npn_strict_area = NA)
+
+for(i in 1:length(years)){
+  print(years[[i]])
+  y = years[[i]]
+  
+  sub_non_strict<- st_read(non_strict_files2[grep(years[[i]],non_strict_files2)])
+
+  non_strict_area <-
+  sub_non_strict %>% 
   as.data.frame(.)%>% 
   select(-geometry)%>%
-  mutate(total_area_km2 = cumsum(area_km2))
-
-```
-
-
-```{r}
-adjust_non_strict_area <-
-  non_strict_adjust %>% 
-  as.data.frame(.)%>% 
-  select(-geometry)%>%
-  mutate(total_area_km2 = cumsum(area_km2))
-
-view(adjust_non_strict_area)
+  mutate(total_area_km2 = cumsum(area_km2))%>%
+  filter(Year == max(sub_non_strict$Year))
+  
+  adjust_non_strict_area[i,"Year"]<-y
+  adjust_non_strict_area[i, "Non_strict_area"]<-non_strict_area$total_area_km2
+  
+}
 ```
 
 
