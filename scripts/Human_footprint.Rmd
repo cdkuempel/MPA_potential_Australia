@@ -25,128 +25,21 @@ All human footprint data downloaded from: https://knb.ecoinformatics.org/view/do
 # Load data
 
 ```{r}
-footprint2003 <- rast(here("raw_data/Human_footprint/cumulative_impact_2003.tif"))
+chi_2013 <- rast(here("raw_data/Human_footprint/Direct_high_impact_10perc_2013.tif"))
 ```
 
 ```{r}
-plot(log10(footprint2003+1))
+plot(chi_2013)
 ```
 
-#Load in data set 2013
+
 ```{r}
-footprint2013 <- rast(here("raw_data/Human_footprint/cumulative_impact_2013.tif"))
+chi_2003 <- rast(here("raw_data/Human_footprint/Direct_high_impact_10perc_2003.tif"))
 ```
 
-
-#Reproject human footprint data 
 ```{r}
-footprint2013_projected<- project(footprint2013,"epsg:3577")
+plot(chi_2003)
 ```
-
-#Save projection 
-```{r}
-writeRaster(footprint2013_projected, here("output_data/2013_footprint_projected.tif"), overwrite = FALSE)
-```
-
-#Load in EEZ data 
-```{r}
-eez<- vect(here("raw_data/EEZ/au_eez_pol_april2022.shp"))
-```
-
-##Reproject EEZ to epsg:3577 
-```{r}
-eez_project <- project(eez, "epsg:3577")
-```
-
-#Input capad data 
-```{r}
-capad_2013<- vect(here("output_data/All_MPA_baseline_2013.shp"))
-
-strict_2013<- vect(here("output_data/Strict_baseline_2013.shp"))
-
-non_strict_2013<- vect(here("output_data/Non_strict_baseline_2013.shp"))
-
-```
-
-##Plot to check projections line up 
-```{r}
-plot(log10(footprint2013_projected+1))
-lines(capad_2013)
-lines(eez_project)
-
-#This looks strange due to Aus projection, but the capad + footprint data sets line up  
-```
-
-
-#Clip footprint to Aus EEZ
-```{r}
-aus_footprint_2013<- crop(footprint2013_projected, eez_project, mask = TRUE)
-
-```
-
-##Plot aus data 
-```{r}
-plot(aus_footprint_2013)
-lines(capad_2013)
-```
-
-
-#Use zonal statistics to find average impact in strict vs non-strict vs open 
-Can use hist() or freq() to see the break down of raster values 
-freq(, value = NA) to show how many are NA
-
-##Average for aus EEZ
-```{r}
-global(aus_footprint_2013, "mean", na.rm = TRUE)
-
-#Mean = 1.243893
-```
-
-
-global() gives statistics e.g. global(raster, "mean", na.rm = TRUE)
-##footprint for all protected areas
-```{r}
-capad_footprint_2013<- crop(aus_footprint_2013, capad_2013, mask= TRUE)
-
-global(capad_footprint_2013, "mean", na.rm = TRUE)
-#mean 1.174831
-
-hist(capad_footprint_2013)
-```
-
-## footprint for strict PA
-```{r}
-strict_footprint_2013 <- crop(aus_footprint_2013, strict_2013, mask = TRUE)
-
-global(strict_footprint_2013, "mean", na.rm = TRUE)
-#Mean 1.14252
-```
-
-## footprint for non strict PA 
-```{r}
-nonstrict_footprint_2013 <- crop(aus_footprint_2013, non_strict_2013, mask = TRUE)
-
-global(nonstrict_footprint_2013, "mean", na.rm = TRUE)
-#Mean 1.184331
-```
-
-
-#Select out open ocean
-```{r}
-open_footprint_2013 <- mask(aus_footprint_2013, capad_2013, inverse = TRUE)
-
-#plot(open_footprint_2013)
-#lines(capad)
-
-```
-
-## footprint for open areas
-```{r}
-global(open_footprint_2013, "mean", na.rm = TRUE)
-#mean = 1.285586
-
-```
-
 
 #Find threshold value for converted waters 
 Ocean wilderness has previously been considered the 10% of ocean with least human impacts - we could find the least impacted 10% of aus waters 
