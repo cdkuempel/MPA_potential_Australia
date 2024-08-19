@@ -48,6 +48,33 @@ st_write(capad_diss, here("output_data/Capad_baseline/All_MPA_baseline.shp"), ap
 ```
 
 
+#Total amount protected in 2022
+```{r}
+
+capad_2022<-capad %>% 
+  mutate(diss = 1) %>% 
+  group_by(diss) %>% 
+  summarise(.)
+
+strict_2022<-capad %>% 
+  filter(IUCN %in% c("Ia", "II", "III")) %>%
+  mutate(diss = 1) %>% 
+  group_by(diss) %>% 
+  summarise(.)
+
+non_strict_2022<-capad %>% 
+  filter(IUCN %in% c("IV", "V", "VI")) %>% 
+  mutate(diss = 1) %>% 
+  group_by(diss) %>% 
+  summarise(.)
+
+st_write(capad_2022, here("output_data/Capad_baseline/Full_capad_2022.shp"), append = FALSE)
+st_write(strict_2022, here("output_data/Capad_baseline/Full_strict_2022.shp"), append = FALSE)
+st_write(non_strict_2022, here("output_data/Capad_baseline/Full_non_strict_2022.shp"), append = FALSE)
+
+```
+
+
 ##All by year 
 
 ```{r}
