@@ -165,3 +165,195 @@ for(i in pred.time){
 
 ```
 
+
+```{r read data}
+library(terra)
+
+rastlist <- list.files(here("raw_data/Human_footprint/demersal_destructive/data"), pattern='impact.tif$', all.files= T, full.names= T)
+data <- terra::rast(rastlist)
+
+time <- c(2003:2013) 
+ 
+
+lm_fun= function(x) {
+  if (length(which(is.na(x[1])))>0) {
+    c(NA,NA)
+  } else {
+    m = lm(x ~ time)
+    summary(m)$coefficients[c(1,2)]
+  }
+}
+annual_ave_stack_dd.lm= app(data, lm_fun)
+
+
+
+predict.fun = function (x) {
+  if (length(which(is.na(x[1])))>0) {
+    NA
+  } else {
+    m = x[1] + x[2]*year
+    if(m<0) m <- 0
+    return(m)
+  }
+}
+
+pred.time <-c(2014:2022)
+for(i in pred.time){
+  print(i)
+  a <- Sys.time()
+  
+  year <- i
+  
+  pred = app(annual_ave_stack_dd.lm,predict.fun)
+  
+  writeRaster(pred, here(paste0("output_data/HFP/demersal_destructive/demersal_destructive_impact_", year,".tif")), overwrite = TRUE)
+  
+  print(Sys.time()-a)
+}
+
+```
+
+
+
+```{r read data}
+library(terra)
+
+rastlist <- list.files(here("raw_data/Human_footprint/pelagic_high_bycatch/data"), pattern='impact.tif$', all.files= T, full.names= T)
+data <- terra::rast(rastlist)
+
+time <- c(2003:2013) 
+ 
+
+lm_fun= function(x) {
+  if (length(which(is.na(x[1])))>0) {
+    c(NA,NA)
+  } else {
+    m = lm(x ~ time)
+    summary(m)$coefficients[c(1,2)]
+  }
+}
+annual_ave_stack_pelhigh.lm= app(data, lm_fun)
+
+
+
+predict.fun = function (x) {
+  if (length(which(is.na(x[1])))>0) {
+    NA
+  } else {
+    m = x[1] + x[2]*year
+    if(m<0) m <- 0
+    return(m)
+  }
+}
+
+pred.time <-c(2014:2022)
+for(i in pred.time){
+  print(i)
+  a <- Sys.time()
+  
+  year <- i
+  
+  pred = app(annual_ave_stack_pelhigh.lm,predict.fun)
+  
+  writeRaster(pred, here(paste0("output_data/HFP/pelagic_high_bycatch/pelagic_high_bycatch_impact_", year,".tif")), overwrite = TRUE)
+  
+  print(Sys.time()-a)
+}
+
+```
+
+
+```{r}
+library(terra)
+
+rastlist <- list.files(here("raw_data/Human_footprint/pelagic_low_bycatch/data"), pattern='impact.tif$', all.files= T, full.names= T)
+data <- terra::rast(rastlist)
+
+time <- c(2003:2013) 
+ 
+
+lm_fun= function(x) {
+  if (length(which(is.na(x[1])))>0) {
+    c(NA,NA)
+  } else {
+    m = lm(x ~ time)
+    summary(m)$coefficients[c(1,2)]
+  }
+}
+annual_ave_stack_pellow.lm= app(data, lm_fun)
+
+
+
+predict.fun = function (x) {
+  if (length(which(is.na(x[1])))>0) {
+    NA
+  } else {
+    m = x[1] + x[2]*year
+    if(m<0) m <- 0
+    return(m)
+  }
+}
+
+pred.time <-c(2014:2022)
+for(i in pred.time){
+  print(i)
+  a <- Sys.time()
+  
+  year <- i
+  
+  pred = app(annual_ave_stack_pellow.lm,predict.fun)
+  
+  writeRaster(pred, here(paste0("output_data/HFP/pelagic_low_bycatch/pelagic_low_bycatch_impact_", year,".tif")), overwrite = TRUE)
+  
+  print(Sys.time()-a)
+}
+
+```
+
+```{r}
+rastlist <- list.files(here("raw_data/Human_footprint/demersal_nondest_low_bycatch/data"), pattern='impact.tif$', all.files= T, full.names= T)
+data <- terra::rast(rastlist)
+
+time <- c(2003:2013) 
+ 
+
+lm_fun= function(x) {
+  if (length(which(is.na(x[1])))>0) {
+    c(NA,NA)
+  } else {
+    m = lm(x ~ time)
+    summary(m)$coefficients[c(1,2)]
+  }
+}
+annual_ave_stack_demlow.lm= app(data, lm_fun)
+
+
+
+predict.fun = function (x) {
+  if (length(which(is.na(x[1])))>0) {
+    NA
+  } else {
+    m = x[1] + x[2]*year
+    if(m<0) m <- 0
+    return(m)
+  }
+}
+
+pred.time <-c(2014:2022)
+for(i in pred.time){
+  print(i)
+  a <- Sys.time()
+  
+  year <- i
+  
+  pred = app(annual_ave_stack_demlow.lm, predict.fun)
+  
+  writeRaster(pred, here(paste0("output_data/HFP/demersal_nondest_low_bycatch/demersal_nondest_low_bycatch_impact_", year,".tif")), overwrite = TRUE)
+  
+  print(Sys.time()-a)
+}
+
+```
+
+
+
