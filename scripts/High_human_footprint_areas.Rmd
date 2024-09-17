@@ -43,27 +43,32 @@ We then want to (as per Jones et al.) for each year is:
 We want to use the normalised (or rescaled) layer for each pressure that is between 0 and 1.
 
 ```{r}
-years<-c(2003:2013)
+years<-c(2014:2022)
 
-stressors<-list.files(path = here("raw_data/HFP/stressors"),full.name = T)
+stressors<-list.files(path = here("output_data/HFP/stressor_impacts"),full.name = T)
+
+stressor_name <- list.files(path = here("output_data/HFP/stressor_impacts"), full.name = F)
 
 ```
 
 ```{r}
-registerDoParallel(5)
-foreach(stress = 1:length(stressors)) %dopar%{ # year=2013 for some reason this was not running automatically and I had to run manually in chunks.
+#registerDoParallel(4)
+#foreach(stress = 1:length(stressors)) %dopar%{ # year=2013 for some reason this was not running automatically and I had to run manually in chunks.
+  
 
-   t<-rast(stressors[[stress]])
-    name<-names(t)
+for (stress in 1:length(stressors)){
+  print(stress)
+    t<-rast(stressors[[stress]])
+    name<-stressor_name[[stress]]
     
     t2<-t
     t2[t2==0]<-NA #we may need to think about this, since there are so many zeros in some layers
     
     c_10<-global(t2, \(i) quantile(i, 0.1, na.rm=T))
 
-    c_corr<-ifel(t2<c_10[[1]], 0, 1, filename = here(paste0("output_data/HFP/wilderness/stressors/Wilderness_", name,".tif")),overwrite = T) # 0 is wilderness and 1 is not
+    c_corr<-ifel(t2<c_10[[1]], 0, 1, filename = here(paste0("output_data/HFP/wilderness/stressors/Wilderness_", name)),overwrite = T) # 0 is wilderness and 1 is not
     
-    #writeRaster(c_corr, here(paste0("output_data/HFP/wilderness/stressors/Wilderness_", name,".tif")),overwrite = T)
+   # writeRaster(c_corr, here(paste0("output_data/HFP/wilderness/stressors/Wilderness_", name,".tif")),overwrite = T)
   
 }
 
@@ -81,8 +86,10 @@ chi_list<-list.files(path = here("output_data/HFP/cumulative_impact"),full.name 
 ```
 
 ```{r}
-registerDoParallel(5)
-foreach(chi = 1:length(chi_list)) %dopar%{ 
+#registerDoParallel(5)
+#foreach(chi = 1:length(chi_list)) %dopar%{
+  
+for(chi in 1:length(chi_list)){
 chi_sub<-rast(chi_list[[chi]])
 
 name<-names(chi_sub)
@@ -92,7 +99,7 @@ chi_sub2[chi_sub2==0]<-NA
 
 chi_10_2<-global(chi_sub2, \(i) quantile(i, 0.1, na.rm=T))
 
-chi_corr<-ifel(chi_sub2<chi_10_2[[1]], 0, 1, filename = here(paste0("output_data/HFP/wilderness/direct_chi/Wildnerness_",name,".tif")), overwrite = TRUE) # wilderness is now 0 and everything else is 1
+chi_corr<-ifel(chi_sub2<chi_10_2[[1]], 0, 1, filename = here(paste0("output_data/HFP/wilderness/direct_chi/Wilderness_",name,".tif")), overwrite = TRUE) # wilderness is now 0 and everything else is 1
 
 
 }
@@ -101,11 +108,11 @@ chi_corr<-ifel(chi_sub2<chi_10_2[[1]], 0, 1, filename = here(paste0("output_data
 3. Sum layers to identify areas that are in the lowest 10% for each layer (so value of 0 after being summed)
 
 ```{r}
-years<-c(2003:2013)
+years<-c(2014:2022)
 wild_chi<-list.files(here("output_data/HFP/wilderness/direct_chi"), full = T)
 wild_stress<-list.files(here("output_data/HFP/wilderness/stressors"), full = T)
 
-for(i in 2:length(years)){
+for(i in 1:length(years)){
   print(years[[i]])
   
   stress<-c(wild_stress[grep(pattern = years[[i]], x = wild_stress)], wild_chi[grep(pattern = years[[i]], wild_chi)])
