@@ -30,7 +30,6 @@ library(here)
 # Years
 
 years <- 2003:2013
-
 years_subset <- paste(years, collapse="|")
 
 ```
@@ -42,22 +41,23 @@ This sums the impact rasters to calculate CHI.
 
 # select stressors with all years of data to include in model
 
-stressors <- list.files(file.path(here(), "output_data/HFP/stressor_impact"))
-stress_all <- str_sub(stressors, 1, str_length(stressors)-9)
+stressors <- list.files(file.path(here(), "raw_data/Human_footprint/stressor_impacts"))
+stress_all <- str_sub(stressors, 1, str_length(stressors)-16)
 stress_length <- table(stress_all) # each should be 11 (or however many years)
 stressors_all_yrs <- names(stress_length[stress_length == length(years)])
 
-stressors_chi <- list.files(file.path(here(), "output_data/HFP/stressor_impact"),
+stressors_chi <- list.files(file.path(here(), "raw_data/Human_footprint/stressor_impacts"),
                             full=TRUE)
 
 stressors_chi <- grep(paste(stressors_all_yrs, collapse="|"), stressors_chi, value=TRUE)
 
 length(stressors_chi)/length(years) # needs to be a whole number
 
-registerDoParallel(7)
-foreach(year = years,.packages="dplyr") %dopar%{ # year=2013
+#registerDoParallel(4) 
+#years <- 2015:2022
+#foreach(year = years,.packages="dplyr") %dopar%{ # year=2014
   
-#for(year in years){ # year=2013
+for(year in years){
 
   stressors_yr <- grep(year, stressors_chi, value=TRUE)
   print(length(stressors_yr))
@@ -70,15 +70,15 @@ foreach(year = years,.packages="dplyr") %dopar%{ # year=2013
   
 }
 
-
 ```
 
 This checks to make sure that each year has the correct number of impacts.
 ```{r}
-
+years = 2003:2013
 chi_check <- data.frame(year=years, length=c(NA))
 
-for(year in years){ # year=2013
+
+for(year in years){
   stressors_yr <- grep(year, stressors_chi, value=TRUE)
 
   chi_check$length[chi_check$year == year] <- length(stressors_yr)
@@ -95,7 +95,7 @@ Final formatting of raster, masking the ocean area.
 
 ocean<-raster(here("raw_data/ocean.tif"))
 
-for(year in years) { # year=2013
+for(year in years) {
 
   summed_rast <- raster::raster(file.path(here(), sprintf("output_data/HFP/tmp/summed_raster_%s.tif", year)))
 
