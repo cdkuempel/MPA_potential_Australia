@@ -240,133 +240,9 @@ write_csv(combine_mpg, here("output_data/results/MPG_baseline_calculations.csv")
 #Protection equality - corrected 
 
 ```{r}
-capad_imcra_adjusted<- st_read(here("output_data/Adjust_all_capad_imcra_intersect.shp"))%>% 
-  filter(!is.na(Year) == TRUE)
-
-
-strict_imcra_adjusted<- st_read(here("output_data/Adjust_strict_imcra_intersect.shp"))%>% 
-  filter(!is.na(Year) == TRUE)
-
-
-non_strict_imcra_adjusted<- st_read( here("output_data/Adjust_non_strict_imcra_intersect.shp"))%>% 
-  filter(!is.na(Year) == TRUE)
-```
-
-
-
-```{r}
-years<-min(capad_imcra_adjusted$Year):max(capad_imcra_adjusted$Year)
-
-adjust_capad_pe<-data.frame(Year = NA, CAPAD_PE = NA, CAPAD_N = NA)
-
-for(i in 1:length(years)){
-  y<-years[[i]]
-  sub<-capad_imcra_adjusted %>% filter(Year <= y) %>%
-    as.data.frame() %>%
-    dplyr::select(-geometry)
-  eco_sum<-sub %>%
-    group_by(MESO_NA) %>%
-    summarise(ai = unique(ms_r_k2),
-              pi = sum(ecoprtc, na.rm = T))
-  #y<-max(unique(sub$Year))
-  print(y)
-  pe<-pe(eco_sum, version = "proportional", plot_pe = FALSE, correct = TRUE)
-  
-  adjust_capad_pe[i,"Year"]<-y
-  adjust_capad_pe[i, "CAPAD_PE"]<-pe$PE
-  adjust_capad_pe[i, "CAPAD_N"]<-pe$N
-}
-```
-
-
-
-Strict corrected
-```{r}
-adjust_strict_pe<-data.frame(Year = NA, Strict_PE = NA, Strict_N = NA)
-
-for(i in 1:length(years)){
-  y<-years[[i]]
-  sub<-strict_imcra_adjusted %>% filter(Year <= y) %>%
-    as.data.frame() %>%
-    dplyr::select(-geometry)
-  
-  print(y)
-eco_sum<-sub %>%
-    group_by(MESO_NA) %>%
-    summarise(ai = unique(ms_r_k2),
-              pi = sum(ecoprtc, na.rm = T))
-  pe<-pe(eco_sum, version = "proportional", plot_pe = FALSE, correct = TRUE)
-  
-  adjust_strict_pe[i,"Year"]<-y
-  adjust_strict_pe[i, "Strict_PE"]<-pe$PE
-  adjust_strict_pe[i, "Strict_N"]<-pe$N
-}
-```
-
-
-Non-strict corrected
-
-```{r}
-adjust_non_strict_pe<-data.frame(Year = NA, Non_strict_PE = NA, Non_strict_N = NA)
-
-for(i in 1:length(years)){
-  y<-years[[i]]
-  sub<-non_strict_imcra_adjusted %>% filter(Year <= y) %>%
-    as.data.frame() %>%
-    dplyr::select(-geometry)
-  print(y)
-  
-  eco_sum<-sub %>%
-    group_by(MESO_NA) %>%
-    summarise(ai = unique(ms_r_k2),
-              pi = sum(ecoprtc, na.rm = T))
-  
-  pe<-pe(eco_sum, version = "proportional", plot_pe = FALSE, correct = TRUE)
-  
-  adjust_non_strict_pe[i,"Year"]<-y
-  adjust_non_strict_pe[i, "Non_strict_PE"]<-pe$PE
-  adjust_non_strict_pe[i, "Non_strict_N"]<-pe$N
-}
-```
-
-
-```{r}
-combine_adjust<-full_join(adjust_capad_pe, adjust_strict_pe, by = "Year") %>% 
-  full_join(., adjust_non_strict_pe, by = "Year") %>% 
-  arrange(., Year)
-```
-
-
-```{r}
-write_csv(combine_adjust, here("output_data/results/PE_corrected_calculations.csv"))
-```
-
-
-##2.0
-```{r}
-
-strict_imcra_adjusted<- st_read(here("output_data/IMCRA_intersect_adjust/strict_imcra_adjusted_2003.shp"))%>% 
-  filter(!is.na(Year) == TRUE)
 
 adjust_strict_pe2<-data.frame(Year = NA, Strict_PE = NA, Strict_N = NA)
-years = 1916:2003
-for(i in 1:length(years)){
-  y<-years[[i]]
-  sub<-strict_imcra_adjusted %>% filter(Year <= y) %>%
-    as.data.frame() %>%
-    dplyr::select(-geometry)
-  
-  print(y)
-eco_sum<-sub %>%
-    group_by(MESO_NA) %>%
-    summarise(ai = unique(ms_r_k2),
-              pi = sum(ecoprtc, na.rm = T))
-  pe<-pe(eco_sum, version = "proportional", plot_pe = FALSE, correct = TRUE)
-  
-  adjust_strict_pe2[i,"Year"]<-y
-  adjust_strict_pe2[i, "Strict_PE"]<-pe$PE
-  adjust_strict_pe2[i, "Strict_N"]<-pe$N
-}
+
 
 strict_files <- list.files(here("output_data/IMCRA_intersect_adjust"), pattern = "strict_imcra", full.names = TRUE)
 
@@ -374,7 +250,7 @@ strict_only <- strict_files[!grepl("non",strict_files)]
   
 strict_files2<- strict_only[grep("shp", strict_only)]
 
-years= 2004:2013
+years= 2003:2022
 for(i in 1:length(years)){
   y<-years[[i]]
   
@@ -404,35 +280,13 @@ adjust_strict_final <- adjust_strict_pe2[order(adjust_strict_pe2$Year),]
 
 ```{r}
 
-non_strict_imcra_adjusted<- st_read(here("output_data/IMCRA_intersect_adjust/non_strict_imcra_adjusted_2003.shp"))%>% 
-  filter(!is.na(Year) == TRUE)
-
 adjust_non_strict_pe2<-data.frame(Year = NA, Non_Strict_PE = NA, 
                                   Non_Strict_N = NA)
-years = 1916:2003
-for(i in 1:length(years)){
-  y<-years[[i]]
-  sub<-non_strict_imcra_adjusted %>% filter(Year <= y) %>%
-    as.data.frame() %>%
-    dplyr::select(-geometry)
-  
-  print(y)
-eco_sum<-sub %>%
-    group_by(MESO_NA) %>%
-    summarise(ai = unique(ms_r_k2),
-              pi = sum(ecoprtc, na.rm = T))
-  pe<-pe(eco_sum, version = "proportional", plot_pe = FALSE, correct = TRUE)
-  
-  adjust_non_strict_pe2[i,"Year"]<-y
-  adjust_non_strict_pe2[i, "Non_Strict_PE"]<-pe$PE
-  adjust_non_strict_pe2[i, "Non_Strict_N"]<-pe$N
-}
-
 non_strict_files <- list.files(here("output_data/IMCRA_intersect_adjust"), pattern = "non_strict_imcra", full.names = TRUE)
   
 non_strict_files2<- non_strict_files[grep("shp", non_strict_files)]
 
-years= 2004:2013
+years= 2003:2022
 for(i in 1:length(years)){
   y<-years[[i]]
   
@@ -462,36 +316,14 @@ adjust_non_strict_final <- adjust_non_strict_pe2[order(adjust_non_strict_pe2$Yea
 
 ```{r}
 
-capad_imcra_adjusted<- st_read(here("output_data/IMCRA_intersect_adjust/capad_imcra_adjusted_2003.shp"))%>% 
-  filter(!is.na(Year) == TRUE)
-
 adjust_capad_pe2<-data.frame(Year = NA, Capad_PE = NA, Capad_N = NA)
-years = 1916:2003
-for(i in 1:length(years)){
-  y<-years[[i]]
-  sub<-capad_imcra_adjusted %>% 
-    filter(Year <= y) %>%
-    as.data.frame() %>%
-    dplyr::select(-geometry)
-  
-  print(y)
-eco_sum<-sub %>%
-    group_by(MESO_NA) %>%
-    summarise(ai = unique(ms_r_k2),
-              pi = sum(ecoprtc, na.rm = T))
-  pe<-pe(eco_sum, version = "proportional", plot_pe = FALSE, correct = TRUE)
-  
-  adjust_capad_pe2[i,"Year"]<-y
-  adjust_capad_pe2[i, "Capad_PE"]<-pe$PE
-  adjust_capad_pe2[i, "Capad_N"]<-pe$N
-}
 
 capad_files <- list.files(here("output_data/IMCRA_intersect_adjust"), pattern = "capad_imcra", full.names = TRUE)
 
   
 capad_files2<- capad_files[grep("shp", capad_files)]
 
-years= 2004:2013
+years= 2003:2022
 for(i in 1:length(years)){
   y<-years[[i]]
   
@@ -532,140 +364,17 @@ write_csv(combine_adjust, here("output_data/results/PE_corrected_calculations_2.
 ```
 
 #MPG - corrected
-```{r}
-adjust_capad_mpg<-data.frame(Year = NA, Capad_MPG = NA, Capad_N = NA)
-
-years<-min(capad_imcra_adjusted$Year):max(capad_imcra_adjusted$Year)
-
-
-for(i in 1:length(years)){
-   y<-years[[i]]
-  sub<-capad_imcra_adjusted %>% filter(Year <= y) %>%
-    as.data.frame() %>%
-    dplyr::select(-geometry)
-  print(y)
-eco_sum<-sub %>%
-    group_by(MESO_NA) %>%
-    summarise(ai = unique(ms_r_k2),
-              pi = sum(ecoprtc, na.rm = T)) %>% 
-  rename(feature = MESO_NA)
-
- mpg<- mpg(eco_sum, target = 0.3, plot = F)
-  
-  adjust_capad_mpg[i,"Year"]<-y
-  adjust_capad_mpg[i, "Capad_MPG"]<-mpg$MPG
-  adjust_capad_mpg[i, "Capad_N"]<-mpg$N
-}
-```
-
-
-
-Strict baseline
-Calculate the mean protection gap for 30%
-```{r}
-
-adjust_strict_mpg<-data.frame(Year = NA, Strict_MPG = NA, Strict_N = NA)
-
-years<-min(strict_imcra_adjusted$Year):max(strict_imcra_adjusted$Year)
-
-
-for(i in 1:length(years)){
-   y<-years[[i]]
-  sub<-strict_imcra_adjusted %>% filter(Year <= y) %>%
-    as.data.frame() %>%
-    dplyr::select(-geometry)
-  print(y)
-eco_sum<-sub %>%
-    group_by(MESO_NA) %>%
-    summarise(ai = unique(ms_r_k2),
-              pi = sum(ecoprtc, na.rm = T)) %>% 
-  rename(feature = MESO_NA)
-
- mpg<- mpg(eco_sum, target = 0.3, plot = F)
-  
-  adjust_strict_mpg[i,"Year"]<-y
-  adjust_strict_mpg[i, "Strict_MPG"]<-mpg$MPG
-  adjust_strict_mpg[i, "Strict_N"]<-mpg$N
-}
-```
-
-
-Non-strict baseline
-```{r}
-adjust_non_strict_mpg<-data.frame(Year = NA, Non_Strict_MPG = NA, Non_Strict_N = NA)
-
-years<-min(non_strict_imcra_adjusted$Year, na.rm = T):max(non_strict_imcra_adjusted$Year, na.rm=T)
-
-for(i in 1:length(years)){
-   y<-years[[i]]
-  sub<-non_strict_imcra_adjusted %>% filter(Year <= y) %>%
-    as.data.frame() %>%
-    dplyr::select(-geometry)
-  print(y)
-eco_sum<-sub %>%
-    group_by(MESO_NA) %>%
-    summarise(ai = unique(ms_r_k2),
-              pi = sum(ecoprtc, na.rm = T)) %>% 
-    rename(feature = MESO_NA)
-
- mpg<- mpg(eco_sum, target = 0.1, plot = F)
-  
-  adjust_non_strict_mpg[i,"Year"]<-y
- adjust_non_strict_mpg[i, "Non_Strict_MPG"]<-mpg$MPG
-  adjust_non_strict_mpg[i, "Non_Strict_N"]<-mpg$N
-}
-```
 
 ```{r}
-combine_mpg<-full_join(adjust_capad_mpg, adjust_strict_mpg, by = "Year") %>% 
-  full_join(., adjust_non_strict_mpg, by = "Year") %>% 
-  arrange(., Year)
-```
-
-
-```{r}
-write_csv(combine_mpg, here("output_data/results/MPG_corrected_calculations.csv"))
-```
-
-
-
-##MPG 2.0
-
-```{r}
-
-capad_imcra_adjusted<- st_read(here("output_data/IMCRA_intersect_adjust/capad_imcra_adjusted_2003.shp"))%>% 
-  filter(!is.na(Year) == TRUE)
 
 adjust_capad_mpg2<-data.frame(Year = NA, Capad_MPG = NA, Capad_N = NA)
-
-years<-min(capad_imcra_adjusted$Year):2003
-
-for(i in 1:length(years)){
-   y<-years[[i]]
-  sub<-capad_imcra_adjusted %>% 
-    filter(Year <= y) %>%
-    as.data.frame() %>%
-    dplyr::select(-geometry)
-  print(y)
-eco_sum<-sub %>%
-    group_by(MESO_NA) %>%
-    summarise(ai = unique(ms_r_k2),
-              pi = sum(ecoprtc, na.rm = T)) %>% 
-  rename(feature = MESO_NA)
-
- mpg<- mpg(eco_sum, target = 0.3, plot = F)
-  
-  adjust_capad_mpg2[i,"Year"]<-y
-  adjust_capad_mpg2[i, "Capad_MPG"]<-mpg$MPG
-  adjust_capad_mpg2[i, "Capad_N"]<-mpg$N
-}
 
 capad_files <- list.files(here("output_data/IMCRA_intersect_adjust"), pattern = "capad_imcra", full.names = TRUE)
 
   
 capad_files2<- capad_files[grep("shp", capad_files)]
 
-years= 2004:2013
+years= 2003:2022
 for(i in 1:length(years)){
   y<-years[[i]]
   
@@ -696,34 +405,8 @@ adjust_capad_mpg_final <- adjust_capad_mpg2[order(adjust_capad_mpg2$Year),]
 
 ```{r}
 
-strict_imcra_adjusted<- st_read(here("output_data/IMCRA_intersect_adjust/strict_imcra_adjusted_2003.shp"))%>% 
-  filter(!is.na(Year) == TRUE)
-
 adjust_strict_mpg2<-data.frame(Year = NA, Strict_MPG = NA, Strict_N = NA)
 
-years<-min(strict_imcra_adjusted$Year):2003
-
-for(i in 1:length(years)){
-   y<-years[[i]]
-  sub<-strict_imcra_adjusted %>% 
-    filter(Year <= y) %>%
-    as.data.frame() %>%
-    dplyr::select(-geometry)
-  
-  print(y)
-  
-eco_sum<-sub %>%
-    group_by(MESO_NA) %>%
-    summarise(ai = unique(ms_r_k2),
-              pi = sum(ecoprtc, na.rm = T)) %>% 
-  rename(feature = MESO_NA)
-
- mpg<- mpg(eco_sum, target = 0.3, plot = F)
-  
-  adjust_strict_mpg2[i,"Year"]<-y
-  adjust_strict_mpg2[i, "Strict_MPG"]<-mpg$MPG
-  adjust_strict_mpg2[i, "Strict_N"]<-mpg$N
-}
 
 strict_files <- list.files(here("output_data/IMCRA_intersect_adjust"), pattern = "strict_imcra", full.names = TRUE)
 
@@ -732,7 +415,7 @@ strict_only <- strict_files[!grepl("non",strict_files)]
 strict_files2<- strict_only[grep("shp", strict_only)]
 
 
-years= 2004:2013
+years= 2003:2022
 for(i in 1:length(years)){
   y<-years[[i]]
   
@@ -765,41 +448,15 @@ adjust_strict_mpg_final <- adjust_strict_mpg2[order(adjust_strict_mpg2$Year),]
 
 ```{r}
 
-non_strict_imcra_adjusted<- st_read(here("output_data/IMCRA_intersect_adjust/non_strict_imcra_adjusted_2003.shp"))%>% 
-  filter(!is.na(Year) == TRUE)
-
 adjust_non_strict_mpg2<-data.frame(Year = NA, Non_Strict_MPG = NA, Non_Strict_N = NA)
 
-years<-min(non_strict_imcra_adjusted$Year):2003
-
-for(i in 1:length(years)){
-   y<-years[[i]]
-  sub<-non_strict_imcra_adjusted %>% 
-    filter(Year <= y) %>%
-    as.data.frame() %>%
-    dplyr::select(-geometry)
-  
-  print(y)
-  
-eco_sum<-sub %>%
-    group_by(MESO_NA) %>%
-    summarise(ai = unique(ms_r_k2),
-              pi = sum(ecoprtc, na.rm = T)) %>% 
-  rename(feature = MESO_NA)
-
- mpg<- mpg(eco_sum, target = 0.3, plot = F)
-  
-  adjust_non_strict_mpg2[i,"Year"]<-y
-  adjust_non_strict_mpg2[i, "Non_Strict_MPG"]<-mpg$MPG
-  adjust_non_strict_mpg2[i, "Non_Strict_N"]<-mpg$N
-}
 
 non_strict_files <- list.files(here("output_data/IMCRA_intersect_adjust"), pattern = "non_strict_imcra", full.names = TRUE)
   
 non_strict_files2<- non_strict_files[grep("shp", non_strict_files)]
 
 
-years= 2004:2013
+years= 2003:2022
 for(i in 1:length(years)){
   y<-years[[i]]
   
