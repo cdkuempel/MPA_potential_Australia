@@ -33,9 +33,9 @@ project_eez <- vect(here("output_data/projected_eez.shp"))
 
 #Set up for creating adjusted capad data sets 
 ```{r}
-years<- c(2004:2013)
+years<- c(2003:2013)
 
-hfp_files<- list.files(here("raw_data/Human_footprint"),"Direct_high_impact",full.names = TRUE)
+hfp_files<- list.files(here("output_data/HFP/wilderness/direct_wilderness"),"Direct_high_impact",full.names = TRUE)
 
 capad_files<- list.files(here("output_data/Capad_baseline"), "capad_baseline", full.names = TRUE)
 capad_files2<- capad_files[grep("shp", capad_files)]
@@ -47,38 +47,62 @@ non_strict_files<- list.files(here("output_data/Capad_baseline"), "Non_strict_ba
 non_strict_files2<- non_strict_files[grep("shp", non_strict_files)]
 ```
 
+```{r}
+old <- rast(here("output_data/HFP/wilderness/direct_wilderness/Direct_high_impact_10perc_2003.tif"))
+
+
+```
 
 #create adjusted capad data sets 
 ```{r}
 for(i in 1:length(years)){
 print(years[[i]])  
+  
 sub_hfp<- rast(hfp_files[grep(years[[i]],hfp_files)])
 
 #get the human impact data
 project_impact<- project(sub_hfp, "epsg:3577")
 impact_clip<- crop(project_impact, project_eez, mask = TRUE)
+#impact_valid <- classify(impact_clip, cbind(NA, 0))
 impact_poly<- as.polygons(impact_clip)
 
 #remove intersect between hfp and capad 
-sub_capad<- vect(capad_files2[grep(years[[i]],capad_files2)])
+sub_capad<- st_read(capad_files2[grep(years[[i]],capad_files2)])
 
-capad_intersect<- intersect(sub_capad, impact_poly)
+sub_capad1<- sub_capad%>%
+  st_make_valid(.)
+sub_capad2<- vect(sub_capad1)
 
-capad_adjust<- erase(sub_capad,capad_intersect)
+capad_intersect<- intersect(sub_capad2, impact_poly)
+
+capad_adjust<- erase(sub_capad2,capad_intersect)
+
+#plot(sub_capad2)
+#plot(impact_clip, col = "yellow", add = TRUE)
+#plot(capad_adjust, col = "blue", add = TRUE)
 
 #update the area column
 capad_adjust$new_capad_area<- capad_adjust%>% expanse(.)*1e-6
 
 
-sub_strict<- vect(strict_files2[grep(years[[i]],strict_files2)])
-strict_intersect<- intersect(sub_strict, impact_poly)
-strict_adjust<- erase(sub_strict,strict_intersect)
+#strict capad
+sub_strict<- st_read(strict_files2[grep(years[[i]],strict_files2)])
+sub_strict1<- sub_strict%>%
+  st_make_valid(.)
+sub_strict2<- vect(sub_strict1)
+
+strict_intersect<- intersect(sub_strict2, impact_poly)
+strict_adjust<- terra::erase(sub_strict2,strict_intersect)
 
 strict_adjust$new_strict_area<- strict_adjust%>% expanse(.)*1e-6
 
-sub_non_strict<- vect(non_strict_files2[grep(years[[i]],non_strict_files2)])
-non_strict_intersect<- intersect(sub_non_strict, impact_poly)
-non_strict_adjust<- erase(sub_non_strict,non_strict_intersect)
+#non-strict capad
+sub_non_strict<- st_read(non_strict_files2[grep(years[[i]],non_strict_files2)])
+sub_non_strict1<- sub_non_strict%>%
+  st_make_valid(.)
+sub_non_strict2<- vect(sub_non_strict1)
+non_strict_intersect<- intersect(sub_non_strict2, impact_poly)
+non_strict_adjust<- terra::erase(sub_non_strict2,non_strict_intersect)
 
 non_strict_adjust$new_non_strict_area<- non_strict_adjust%>% expanse(.)*1e-6
 
@@ -90,7 +114,9 @@ writeVector(strict_adjust,here(paste0("output_data/Capad_adjusted/strict_adjust_
 writeVector(non_strict_adjust,here(paste0("output_data/Capad_adjusted/non_strict_adjust_", years[[i]],".shp")), overwrite = TRUE)
 
 }
+
 ```
+
 
 ```{r}
 view(st_read(here("output_data/Capad_adjusted/non_strict_adjust_2003.shp")))
