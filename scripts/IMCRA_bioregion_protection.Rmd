@@ -188,7 +188,7 @@ capad_files <- list.files(here("output_data/Capad_adjusted"), pattern = "capad_a
 
 capad_files2<- capad_files[grep("shp", capad_files)]
 
-years<- c(2003:2013)
+years<- c(2003:2022)
 for(i in 1:length(years)){
   print(years[[i]])
   sub_capad<- st_read(capad_files2[grep(years[[i]],capad_files2)])
@@ -214,8 +214,7 @@ strict_only <- strict_files[!grepl("non",strict_files)]
   
 strict_files2<- strict_only[grep("shp", strict_only)]
 
-years<- c(2003:2013)
-i =1 
+years<- c(2003:2022)
 for(i in 1:length(years)){
   print(years[[i]])
   sub_strict<- st_read(strict_files2[grep(years[[i]],strict_files2)])
@@ -237,7 +236,7 @@ non_strict_files <- list.files(here("output_data/Capad_adjusted"), pattern = "no
   
 non_strict_files2<- non_strict_files[grep("shp", non_strict_files)]
 
-years<- c(2003:2013)
+years<- c(2003:2022)
 for(i in 1:length(years)){
   print(years[[i]])
   sub_non_strict<- st_read(non_strict_files2[grep(years[[i]],non_strict_files2)])
