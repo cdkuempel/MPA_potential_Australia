@@ -175,7 +175,7 @@ Calculate the mean protection gap for 30%
 
 strict_mpg<-data.frame(Year = NA, Strict_MPG = NA, Strict_N = NA)
 
-years<-min(strict_imcra$Year):max(strict_imcra$Year)
+years<-min(strict_imcra$Year):2022
 
 
 for(i in 1:length(years)){
