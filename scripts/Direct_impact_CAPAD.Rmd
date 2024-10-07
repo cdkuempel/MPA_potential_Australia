@@ -119,7 +119,7 @@ writeVector(non_strict_adjust,here(paste0("output_data/Capad_adjusted/non_strict
 
 
 ```{r}
-view(st_read(here("output_data/Capad_adjusted/non_strict_adjust_2003.shp")))
+plot(st_read(here("output_data/Capad_adjusted/non_strict_adjust_2003.shp")))
 ```
 
 Total area in last year (currently 2013)
