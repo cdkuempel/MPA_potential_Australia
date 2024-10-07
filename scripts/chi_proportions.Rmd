@@ -1,0 +1,105 @@
+---
+title: "Untitled"
+author: "Jade Arnold"
+date: "2024-09-30"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(terra)
+library(tidyverse)
+library(here)
+library(ggplot2)
+```
+
+
+```{r}
+all_stressors<- list.files(file.path(here(),"output_data/HFP/stressor_impacts"), full.names = TRUE)
+
+stressor_name<- list.files(file.path(here(),"output_data/HFP/stressor_impacts"), full.names = FALSE)
+
+aus_files<- list.files(here("output_data/HFP/cumulative_impact"), "aus_chi", full.names = TRUE)
+
+years = 2003:2022
+
+ref<- rast(all_stressors[1])
+```
+
+#reproject eez 
+```{r}
+eez<- vect(here("raw_data/EEZ/au_eez_pol_april2022.shp"))
+
+eez_project<- project(eez, ref)
+```
+
+
+```{r}
+#make new data frame 
+chi_props<- data.frame(Year=NA, Stressor = NA, AvgValue = NA, AusAvg = NA, Chi_prop = NA)
+
+#track what row to add data too 
+row_index<- 1 
+
+#for loop to extract average stressor value for each stressor and year 
+for(i in 2:length(years)){
+  print(years[[i]])
+  
+  aus_year<- rast(grep(years[[i]], aus_files, value = TRUE))
+  aus_mean<- global(aus_year, fun = "mean", na.rm = TRUE)
+  
+  stressor_year<- grep(years[i], all_stressors, value = TRUE)
+
+  stressor_name1<- grep(years[[i]], stressor_name, value = TRUE)
+  name <- str_sub(stressor_name1, 1, str_length(stressor_name1)-16)
+
+  for(j in 1:length(stressor_year)){
+    
+    stressor<- rast(stressor_year[[j]])
+      
+    extraction<- terra::extract(stressor,eez_project)
+
+    stressor_avg<- mean(extraction[,2], na.rm = TRUE)
+    
+    prop<- stressor_avg/aus_mean
+    
+  chi_props[row_index,"Year"]<-years[[i]]
+  chi_props[row_index, "Stressor"]<- name[[j]]
+  chi_props[row_index, "AvgValue"]<-stressor_avg
+  chi_props[row_index, "AusAvg"]<- aus_mean
+  chi_props[row_index, "Chi_prop"]<- prop
+  
+  row_index<- row_index+1
+  }
+  
+}
+
+chi_props$Stressor[chi_props$Stressor=="commercial_fishing_demersal_destructive"] <- "demersal_destructive"
+chi_props$Stressor[chi_props$Stressor=="commercial_fishing_demersal_nondestructive_high_bycatch"] <- "demersal_nondestructive_high_bycatch"
+chi_props$Stressor[chi_props$Stressor=="commercial_fishing_demersal_nondestructive_low_bycatch"] <- "demersal_nondestructive_low_bycatch"
+chi_props$Stressor[chi_props$Stressor=="commercial_fishing_pelagic_high_bycatch" ] <- "pelagic_high_bycatch"
+chi_props$Stressor[chi_props$Stressor=="commercial_fishing_pelagic_low_bycatch" ] <- "pelagic_low_bycatch"
+
+chi_props$Stressor[chi_props$Stressor=="demersal_nondest_high_bycatch" ] <- "demersal_nondestructive_high_bycatch"
+chi_props$Stressor[chi_props$Stressor=="demersal_nondest_low_bycatch" ] <- "demersal_nondestructive_low_bycatch"
+
+write.csv(chi_props, here("output_data/results/chi_proportions.csv"))
+
+```
+
+#stacked bar chart
+```{r}
+
+ggplot(chi_props, aes(x = Year, y = Chi_prop, fill = Stressor))+
+  geom_bar(position = "stack", stat = "identity") +
+  scale_fill_brewer(palette = "Paired", labels = c("Artisanal fishing", 
+                                                   "Demersal destructive", "Demersal non-destructive - high by-catch", "Demersal non-destructive - low by-catch","Pelagic - high by-catch", "Pelagic - low by-catch", "Shipping"))+
+  theme_bw()+
+  labs(y = "Proportion of cumulative impact", title = "Cumulative human impact stressor breakdown")
+ 
+ggsave(here("figures/chi_proportions.png"), width =10, height=8)
+```
+
