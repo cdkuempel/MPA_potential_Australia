@@ -1,0 +1,70 @@
+---
+title: "Untitled"
+author: "Jade Arnold"
+date: "2024-10-02"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(terra)
+library(tidyverse)
+library(here)
+library(ggplot2)
+```
+
+
+#Read in high human impact areas 
+```{r}
+high_impact_files<- list.files(here("output_data/HFP/wilderness/direct_wilderness"), full.names = TRUE)
+```
+
+#reproject eez
+```{r}
+eez<- vect(here("raw_data/EEZ/au_eez_pol_april2022.shp"))
+
+ref<- rast(high_impact_files[1])
+
+eez_project<- project(eez, ref)
+
+```
+
+
+```{r}
+years<- 2003:2022 
+
+#Make new data frame 
+wilderness_aus<- data.frame(Year= NA, Wilderness = NA, Wilderness_prop = NA, Non_wilderness = NA, Non_wilderness_prop = NA)
+
+for(i in 1:length(years)){
+  
+  print(years[i])
+  
+  human_impact_year<- rast(grep(years[[i]], high_impact_files, value = TRUE))
+
+  aus_non_wilderness<- crop(human_impact_year, eez_project)
+    
+    non_wilderness_area <- sum(expanse(aus_non_wilderness, unit = "km"))
+  
+  eez_area<- sum(expanse(eez_project, unit = "km"))
+  
+  non_prop = non_wilderness_area/eez_area
+  
+  wilderness_prop = 1-non_prop
+  
+  wilderness_area = eez_area*wilderness_prop
+  
+   wilderness_aus[i,"Year"]<-years[[i]]
+  wilderness_aus[i, "Wilderness"]<- wilderness_area
+    wilderness_aus[i, "Wilderness_prop"]<- wilderness_prop
+    wilderness_aus[i, "Non_wilderness"]<-non_wilderness_area
+  wilderness_aus[i, "Non_wilderness_prop"]<-non_prop
+}
+
+write.csv(wilderness_aus, here("output_data/results/wilderness_proportions.csv"))
+```
+
