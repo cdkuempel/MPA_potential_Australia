@@ -17,38 +17,139 @@ library(here)
 library(tidyverse)
 library(lubridate)
 library(terra)
+library(tmap)
+library(maps)
 ```
 
-All human footprint data downloaded from: https://knb.ecoinformatics.org/view/doi:10.5063/F12B8WBS
 
+#Install CHI data layers 
+```{r}
+chi_files<- list.files(here("output_data/HFP/cumulative_impact"), pattern = "direct_chi", full.names = TRUE)
 
-# Load data
+```
+
+#install eez 
+```{r}
+eez<- vect(here("output_data/projected_eez.shp"))
+```
+
+#create aus layers 
+```{r}
+
+years <- 2014
+
+for(i in 1:length(years)){
+print(years[[i]])  
+  
+sub_chi<- rast(chi_files[grep(years[[i]],chi_files)])
+
+project_chi<- project(sub_chi, "epsg:3577")
+
+chi_clip<- crop(project_chi, eez, mask = TRUE)
+
+writeRaster(chi_clip,here(paste0("output_data/HFP/cumulative_impact/aus_chi_", years[[i]],".tif")), overwrite = TRUE)
+}
+```
+
 
 ```{r}
-chi_2013 <- rast(here("raw_data/Human_footprint/Direct_high_impact_10perc_2013.tif"))
+plot(project_chi)+
+  lines(eez)
 ```
 
+#aus layers
 ```{r}
-plot(chi_2013)
+aus_files<- list.files(here("output_data/HFP/cumulative_impact"), pattern = "aus_chi", full.names = TRUE)
+
+aus_stack<- rast(aus_files)
 ```
 
 
+#find rate
 ```{r}
-chi_2003 <- rast(here("raw_data/Human_footprint/Direct_high_impact_10perc_2003.tif"))
+annual_rate <- app(aus_stack, fun = function(x) diff(x)/1)
+
+avg_rate<- mean(annual_rate)
+
+plot(avg_rate)
 ```
 
+
+#Map
 ```{r}
-plot(chi_2003)
+tmap_mode("plot")
+
+tm_shape(avg_rate)+
+  tm_raster(,palette = "-RdYlBu", style = "cont", midpoint = 0, n = 5)+
+tm_layout(main.title = "Australian Annual Change in Cumulative Human Impacts" , main.title.size = 1, legend.position = c("left",0.3), legend.title.color = "white", legend.title.size = 0.01, legend.text.size = 0.8)+
+  tm_compass(position = c("left",0.15), size = 2)+
+  tm_scale_bar(position = c("left",0.05))
+
+
+tmap_save(filename = "Annual_chi.png", width = 6, height = 4)
+
 ```
 
-#Find threshold value for converted waters 
-Ocean wilderness has previously been considered the 10% of ocean with least human impacts - we could find the least impacted 10% of aus waters 
+#Baseline
+##Load in MPA data 
+```{r}
+full_capad<- vect(here("output_data/Capad_baseline/Full_capad_2022.shp"))
 
-#change raster to 0 and 1 
-This code is for an example, reclassing numbers less than the mean as 1 and more than the mean as 2. Needs to be as a matrix 
-reclass_matrix <- c(0, sst_mean, 1, 
-                    sst_mean, Inf, 2)%>% 
-                    matrix(ncol = 3, byrow=TRUE)
-                    
-reclassed <- classify(raster, reclass_matrix)
-                    
+full_non_strict<- vect(here("output_data/Capad_baseline/Full_non_strict_2022.shp"))
+
+full_strict<- vect(here("output_data/Capad_baseline/Full_strict_2022.shp"))
+
+```
+
+##Calculate values for mpa type 
+```{r}
+capad_avg<- zonal(avg_rate, full_capad, fun = "mean", na.rm = TRUE)
+capad_avg #0.002859895	
+
+non_strict_avg<- zonal(avg_rate, full_non_strict, fun = "mean", na.rm = TRUE)
+non_strict_avg #0.003110327
+
+strict_avg<- zonal(avg_rate, full_strict, fun = "mean", na.rm = TRUE)
+strict_avg #0.00242239
+
+#outside capad 
+non_capad<- mask(avg_rate, full_capad, inverse= TRUE)
+not_protected<- mean(non_capad[], na.rm = TRUE)
+not_protected #0.003038791	
+```
+
+
+#Adjusted 
+##Load in MPA data 
+```{r}
+adjust_capad<- vect(here("output_data/Capad_adjusted/capad_adjust_2022.shp"))
+
+adjust_non_strict<- vect(here("output_data/Capad_adjusted/non_strict_adjust_2022.shp"))
+
+adjust_strict<- vect(here("output_data/Capad_adjusted/strict_adjust_2022.shp"))
+
+```
+
+##Calculate values for mpa type 
+```{r}
+adj_capad<- mask(avg_rate, adjust_capad, inverse= FALSE)
+adj_capad_avg<- mean(adj_capad[], na.rm = TRUE)
+adj_capad_avg #0.002860489
+
+adj_non_strict<- mask(avg_rate, adjust_non_strict, inverse= FALSE)
+adj_non_strict_avg<- mean(adj_non_strict[], na.rm = TRUE)
+adj_non_strict_avg #0.003119888
+
+adj_strict<- mask(avg_rate, adjust_strict, inverse= FALSE)
+adj_strict_avg<- mean(adj_strict[], na.rm = TRUE)
+adj_strict_avg #0.0024064458
+
+
+#outside capad 
+
+adj_non_capad<- mask(avg_rate, adjust_capad, inverse= TRUE)
+adj_not_avg<- mean(adj_non_capad[], na.rm = TRUE)
+adj_not_avg #0.003031605
+
+```
+
