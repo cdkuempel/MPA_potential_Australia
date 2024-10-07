@@ -103,84 +103,6 @@ st_write(non_strict_imcra, here("output_data/IMCRA_intersect/Non_strict_imcra_in
 # HERE YOU WOULD THEN REPEAT FOR THE CORRECTED ONE ONCE YOU HAVE DONE THE HUMAN FOOTPRINT CORRECTIONS
 
 # CAPAD corrected
-## combine into one data set with each year 
-```{r}
-base<-st_read(here("output_data/Capad_adjusted/capad_adjust_2003.shp"))
-
-capad_files <- list.files(here("output_data/Capad_adjusted"), pattern = "capad_adjust", full.names = TRUE)
-
-capad_files2<- capad_files[grep("shp", capad_files)]
-
-years<- c(2004:2013)
-
-for(i in 1:length(years)){
-  print(years[[i]])
-  sub_capad<- st_read(capad_files2[grep(years[[i]],capad_files2)])
-
-  select_year <- sub_capad[sub_capad$Year == years[[i]],]
-  updated_capad <- rbind(base,select_year)
-  base <- updated_capad
-}
-
-# Save the combined shapefile
-st_write(base, here("output_data/Capad_adjusted/All_capad_adjusted.shp"), append = FALSE)
-```
-
-
-```{r}
-base_strict<-st_read(here("output_data/Capad_adjusted/strict_adjust_2003.shp"))
-
-strict_files <- list.files(here("output_data/Capad_adjusted"), pattern = "strict_adjust", full.names = TRUE)
-
-strict_only <- strict_files[!grepl("non",strict_files)]
-  
-strict_files2<- strict_only[grep("shp", strict_only)]
-
-
-years<- c(2004:2013)
-
-for(i in 1:length(years)){
-  print(years[[i]])
-  sub_strict<- st_read(strict_files2[grep(years[[i]],strict_files2)])
-
-  select_year <- sub_strict[sub_strict$Year == years[[i]],]
-  updated_strict <- rbind(base_strict,select_year)
-  base_strict <- updated_strict
-}
-
-# Save the combined shapefile
-st_write(base_strict, here("output_data/Capad_adjusted/All_strict_adjusted.shp"), append = FALSE)
-```
-
-```{r}
-base_non<-st_read(here("output_data/Capad_adjusted/non_strict_adjust_2003.shp"))
-
-non_strict_files <- list.files(here("output_data/Capad_adjusted"), pattern = "non_strict_adjust", full.names = TRUE)
-  
-non_strict_files2<- non_strict_files[grep("shp", non_strict_files)]
-
-
-non_years<- c(2004:2013)
-
-for(i in 1:length(years)){
-  print(years[[i]])
-  sub_non<- st_read(non_strict_files2[grep(years[[i]],non_strict_files2)])
-
-  select_year <- sub_non[sub_non$Year == years[[i]],]
-  updated_non <- rbind(base_non,select_year)
-  base_non <- updated_non
-}
-
-# Save the combined shapefile
-st_write(base_non, here("output_data/Capad_adjusted/All_non_strict_adjusted.shp"), append = FALSE)
-```
-
-```{r}
-capad_adjust<- st_read(here("output_data/Capad_adjusted/All_capad_adjusted.shp"))
-strict_adjust<- st_read(here("output_data/Capad_adjusted/All_strict_adjusted.shp"))
-non_strict_adjust<- st_read(here("output_data/Capad_adjusted/All_non_strict_adjusted.shp"))
-```
-
 ##Calculate ecoregion protected 
 
 ```{r}
@@ -263,6 +185,9 @@ strict_2022<- st_read(here("output_data/Capad_baseline/Full_strict_2022.shp"))
 
 non_strict_2022<- st_read(here("output_data/Capad_baseline/Full_non_strict_2022.shp"))
 
+capad_2022<- st_read(here("output_data/Capad_baseline/Full_capad_2022.shp"))
+
+
 ```
 
 ```{r}
@@ -273,15 +198,44 @@ strict_imcra_2022<-st_intersection(strict_2022, imcra_diss) %>%
          prop_strict = ecoprotec/meso_area_km2) %>% 
   st_cast(., "POLYGON")
 
+final_baseline_strict = strict_imcra_2022%>%
+  select(MESO_NAME, meso_area_km2, ecoprotec, prop_strict)%>% 
+  st_drop_geometry(.)
+
+
 non_strict_imcra_2022<-st_intersection(non_strict_2022, imcra_diss) %>% 
   st_make_valid(.) %>% 
   mutate(ecoprotec = as.numeric(st_area(.))*1e-6, 
          prop_non_strict = ecoprotec/meso_area_km2)%>% 
   st_cast(., "POLYGON")
 
-st_write(strict_imcra_2022, here("output_data/results/Strict_fullnetwork_imcra_2022.shp"))
+final_baseline_non_strict = non_strict_imcra_2022%>%
+  select(MESO_NAME, meso_area_km2, ecoprotec, prop_non_strict)%>% 
+  st_drop_geometry(.)
 
-st_write(non_strict_imcra_2022, here("output_data/results/Non_strict_fullnetwork_imcra_2022.shp"))
+
+capad_imcra_2022<-st_intersection(capad_2022, imcra_diss) %>% 
+  st_make_valid(.) %>% 
+  mutate(ecoprotec = as.numeric(st_area(.))*1e-6, 
+         prop_capad = ecoprotec/meso_area_km2)%>% 
+  st_cast(., "POLYGON")
+final_baseline_capad = capad_imcra_2022%>%
+  select(MESO_NAME, meso_area_km2, ecoprotec, prop_capad)%>% 
+  st_drop_geometry(.)
+
+st_write(strict_imcra_2022, here("output_data/results/Strict_baseline_imcra_2022.shp"))
+write.csv(strict_imcra_2022, here("output_data/results/Strict_baseline_imcra_2022.csv"))
+write.csv(final_baseline_strict, here("output_data/results/Final_baseline_strict_imcra.csv"))
+
+st_write(non_strict_imcra_2022, here("output_data/results/Non_strict_baseline_imcra_2022.shp"))
+write.csv(non_strict_imcra_2022, here("output_data/results/Non_strict_baseline_imcra_2022.csv"))
+write.csv(final_baseline_non_strict, here("output_data/results/Final_baseline_non_strict_imcra.csv"))
+
+
+st_write(capad_imcra_2022, here("output_data/results/Capad_baseline_imcra_2022.shp"))
+write.csv(capad_imcra_2022, here("output_data/results/Capad_baseline_imcra_2022.csv"))
+
+write.csv(final_baseline_capad, here("output_data/results/Final_baseline_capad_imcra.csv"))
 
 
 ```
@@ -290,32 +244,96 @@ st_write(non_strict_imcra_2022, here("output_data/results/Non_strict_fullnetwork
 Corrected
 
 ```{r}
-correct_strict_2013<- st_read(here("output_data/Capad_adjusted/Full_strict_2013_corrected.shp"))
+all_capad<- st_read(here("output_data/Capad_adjusted/capad_adjust_2022.shp"))
 
-correct_non_strict_2013<- st_read(here("output_data/Capad_adjusted/Full_non_strict_2013_corrected.shp"))
+adjust_capad<- all_capad%>%
+   mutate(diss = 1) %>% 
+  group_by(diss) %>% 
+  summarise(.)
+
+all_strict<- st_read(here("output_data/Capad_adjusted/strict_adjust_2022.shp"))
+adjust_strict<- all_strict%>%
+   mutate(diss = 1) %>% 
+  group_by(diss) %>% 
+  summarise(.)
+
+all_non_strict<- st_read(here("output_data/Capad_adjusted/non_strict_adjust_2022.shp"))
+adjust_non_strict<- all_non_strict%>%
+   mutate(diss = 1) %>% 
+  group_by(diss) %>% 
+  summarise(.)
 
 ```
 
 ```{r}
 
-correct_strict_imcra_2013<-st_intersection(correct_strict_2013, imcra_diss) %>% 
+adjust_capad_imcra<-st_intersection(adjust_capad, imcra_diss) %>% 
   st_make_valid(.) %>% 
   mutate(ecoprotec = as.numeric(st_area(.))*1e-6, 
-         prop_strict = ecoprotec/meso_area_km2) %>% 
+         prop_capad = ecoprotec/meso_area_km2) %>% 
   st_cast(., "POLYGON")
 
-correct_non_strict_imcra_2013<-st_intersection(correct_non_strict_2013, imcra_diss) %>% 
+final_adjust_capad = adjust_capad_imcra%>%
+  select(MESO_NAME, meso_area_km2, ecoprotec, prop_capad)%>% 
+  st_drop_geometry(.)
+
+
+adjust_strict_imcra<-st_intersection(adjust_strict, imcra_diss) %>% 
+  st_make_valid(.) %>% 
+  mutate(ecoprotec = as.numeric(st_area(.))*1e-6, 
+         prop_strict = ecoprotec/meso_area_km2)%>% 
+  st_cast(., "POLYGON")
+
+final_adjust_strict = adjust_strict_imcra%>%
+  select(MESO_NAME, meso_area_km2, ecoprotec, prop_strict)%>% 
+  st_drop_geometry(.)
+
+
+adjust_non_strict_imcra<-st_intersection(adjust_non_strict, imcra_diss) %>% 
   st_make_valid(.) %>% 
   mutate(ecoprotec = as.numeric(st_area(.))*1e-6, 
          prop_non_strict = ecoprotec/meso_area_km2)%>% 
   st_cast(., "POLYGON")
 
+final_adjust_non_strict = adjust_non_strict_imcra%>%
+  select(MESO_NAME, meso_area_km2, ecoprotec, prop_non_strict)%>% 
+  st_drop_geometry(.)
+
+
 ```
+
+
+```{r}
+#st_write(adjust_strict_imcra, here("output_data/results/Strict_adjust_imcra.shp"))
+write.csv(final_adjust_strict, here("output_data/results/Final_strict_adjust_imcra.csv"))
+
+#st_write(adjust_non_strict_imcra, here("output_data/results/Non_strict_adjust_imcra.shp"))
+write.csv(final_adjust_non_strict, here("output_data/results/Final_non_strict_adjust_imcra.csv"))
+
+#st_write(adjust_capad_imcra, here("output_data/results/Capad_adjust_imcra.shp"))
+write.csv(final_adjust_capad, here("output_data/results/Final_capad_adjust_imcra.csv"))
+
+```
+
+
 ##No. of ecoregions with protection greater than 30% goal 
 ```{r}
 count_strict_base<- nrow(subset(strict_imcra_2022, strict_imcra_2022$prop_strict>= 0.3))
 #1 
 count_non_strict_base<- nrow(subset(non_strict_imcra_2022, non_strict_imcra_2022$prop_non_strict>= 0.3))
 #23
+
+count_capad_base<- nrow(subset(capad_imcra_2022, capad_imcra_2022$prop_capad>= 0.3))
+#28
+
+
+count_strict_adjust<- nrow(subset(adjust_strict_imcra, adjust_strict_imcra$prop_strict>= 0.3))
+#1 
+count_non_strict_base<- nrow(subset(adjust_non_strict_imcra, adjust_non_strict_imcra$prop_non_strict>= 0.3))
+#22
+
+count_capad_base<- nrow(subset(adjust_capad_imcra, adjust_capad_imcra$prop_capad>= 0.3))
+#27
+
 ```
 
