@@ -14,13 +14,16 @@ library(sf)
 library(ggplot2)
 library(here)
 library(tidyverse)
+library(terra)
+library(cowplot)
 ```
 
 
 #Colours 
 
 ```{r}
-colPalette <- c("#3B3561", "#ECA72C", "#226F54","#B8D4E3", "#C06E52","#01172F")
+colPalette <- c("#3B3561", "#ECA72C", "#226F54","#B8D4E3", "#C06E52","#01172F", "#006D77")
+
 ``` 
 
 
@@ -64,17 +67,17 @@ ggsave(here("figures/All_PAs_Protection_equality.png"), width = 10, height= 6)
 # Plot corrected PE through time 
 
 ```{r}
-pe_corrected<-read_csv(here("output_data/results/PE_corrected_calculations.csv"))
+pe_corrected<-read_csv(here("output_data/results/PE_corrected_calculations_2.csv"))
 ```
 
 ##Create new data frame for PE
 ```{r}
-pe_corrected_long <- pivot_longer(pe_corrected, cols= c("CAPAD_PE", "Strict_PE", "Non_strict_PE"),
+pe_corrected_long <- pivot_longer(pe_corrected, cols= c("Capad_PE", "Strict_PE", "Non_Strict_PE"),
                          names_to = "PE_type",
                          values_to = "PE")
 
 pe_corrected_long<- pe_corrected_long%>% 
-  dplyr::select(-c(CAPAD_N,Strict_N,Non_strict_N))
+  dplyr::select(-c(Capad_N,Strict_N,Non_Strict_N))
 ```
 
 
@@ -120,7 +123,7 @@ ggplot() +
   geom_line(data = pe_long_strict, aes(x = Year, y = PE, col = "Baseline")) +
   geom_line(data = pe_corrected_long_strict, aes(x = Year, y = PE, col = "Corrected")) +
   scale_colour_discrete(type = colPalette, labels = c("Baseline", "Corrected")) + 
-  labs(title = "Ecoregion Protection Equality - Strict",
+  labs(title = "Strict",
       y = "Protection equality",
       x = "Year",
       col = "Type")
@@ -140,7 +143,7 @@ pe_long_non_strict <- pe_long%>%
 
 pe_corrected_long_non_strict <- pe_corrected_long%>%
   group_by(PE_type)%>%
-  filter(PE_type == "Non_strict_PE")
+  filter(PE_type == "Non_Strict_PE")
 
 ```
 
@@ -151,7 +154,7 @@ ggplot() +
   geom_line(data = pe_long_non_strict, aes(x = Year, y = PE, col = "Baseline")) +
   geom_line(data = pe_corrected_long_non_strict, aes(x = Year, y = PE, col = "Corrected")) +
   scale_colour_discrete(type = colPalette, labels = c("Baseline", "Corrected")) + 
-  labs(title = "Ecoregion Protection Equality - Non-strict",
+  labs(title = "Non-strict",
       y = "Protection equality",
       x = "Year",
       col = "Type")
@@ -162,6 +165,37 @@ ggplot() +
 ggsave(here("figures/Non_strict_PE.png"), width = 10, height= 6)
 ```
 
+##Full CAPAD network
+```{r}
+
+pe_long_capad <- pe_long%>%
+  group_by(PE_type)%>%
+  filter(PE_type == "CAPAD_PE")
+
+pe_corrected_long_capad <- pe_corrected_long%>%
+  group_by(PE_type)%>%
+  filter(PE_type == "Capad_PE")
+
+```
+
+
+```{r}
+ggplot() +
+  theme_bw() +
+  geom_line(data = pe_long_capad, aes(x = Year, y = PE, col = "Baseline")) +
+  geom_line(data = pe_corrected_long_capad, aes(x = Year, y = PE, col = "Corrected")) +
+  scale_colour_discrete(type = colPalette, labels = c("Baseline", "Corrected")) + 
+  labs(title = "Full CAPAD network",
+      y = "Protection equality",
+      x = "Year",
+      col = "Type")
+
+```
+
+
+```{r}
+ggsave(here("figures/Capad_PE.png"), width = 10, height= 6)
+```
 
 #Plot MPG 
 ##Load in data 
@@ -203,7 +237,7 @@ ggsave(here("figures/All_PAs_MPG.png"), width =10, height=6)
 
 #Plot corrected MPG
 ```{r}
-mpg_corrected<- read_csv(here("output_data/results/MPG_corrected_calculations.csv"))
+mpg_corrected<- read_csv(here("output_data/results/MPG_corrected_calculations_2.csv"))
 ```
 
 ##Create new data frame for MPG 
@@ -256,7 +290,7 @@ ggplot() +
   geom_line(data = mpg_long_strict, aes(x = Year, y = MPG, col = "Baseline")) +
   geom_line(data = mpg_corrected_long_strict, aes(x = Year, y = MPG, col = "Corrected")) +
   scale_colour_discrete(type = colPalette, labels = c("Baseline", "Corrected")) + 
-  labs(title = "Ecoregion Protection Gap - Strict",
+  labs(title = "Strict",
       y = "Mean protection gap",
       x = "Year",
       col = "Type")
@@ -288,7 +322,7 @@ ggplot() +
   geom_line(data = mpg_long_non_strict, aes(x = Year, y = MPG, col = "Baseline")) +
   geom_line(data = mpg_corrected_long_non_strict, aes(x = Year, y = MPG, col = "Corrected")) +
   scale_colour_discrete(type = colPalette, labels = c("Baseline", "Corrected")) + 
-  labs(title = "Ecoregion Protection Gap - Non-strict",
+  labs(title = "Non-strict",
       y = "Mean protection gap",
       x = "Year",
       col = "Type")
@@ -299,3 +333,348 @@ ggplot() +
 ```{r}
 ggsave(here("figures/Non_strict_MPG.png"), width =10, height=6)
 ```
+
+
+##Full Capad Network 
+```{r}
+mpg_long_capad <- mpg_long%>%
+  group_by(MPG_type)%>%
+  filter(MPG_type == "Capad_MPG")
+
+mpg_corrected_long_capad <- mpg_corrected_long%>%
+  group_by(MPG_type)%>%
+  filter(MPG_type == "Capad_MPG")
+
+```
+
+
+```{r}
+ggplot() +
+  theme_bw() +
+  geom_line(data = mpg_long_capad, aes(x = Year, y = MPG, col = "Baseline")) +
+  geom_line(data = mpg_corrected_long_capad, aes(x = Year, y = MPG, col = "Corrected")) +
+  scale_colour_discrete(type = colPalette, labels = c("Baseline", "Corrected")) + 
+  labs(title = "Full Capad Network",
+      y = "Mean protection gap",
+      x = "Year",
+      col = "Type")
+
+```
+
+
+```{r}
+ggsave(here("figures/Capad_MPG.png"), width = 10, height= 6)
+```
+
+
+#Total area 
+##Read in area data 
+```{r}
+baseline_capad_area <- read_csv(here("output_data/Total_area/Baseline_capad_area.csv"))
+
+baseline_strict_area <- read_csv(here("output_data/Total_area/Baseline_strict_area.csv"))
+
+baseline_non_strict_area <- read_csv(here("output_data/Total_area/Baseline_non_strict_area.csv"))
+
+```
+
+```{r}
+adjusted_capad_area <- read_csv(here("output_data/Total_area/Adjusted_capad_area.csv"))
+
+adjusted_strict_area <- read_csv(here("output_data/Total_area/Adjusted_strict_area.csv"))
+
+adjusted_non_strict_area <- read_csv(here("output_data/Total_area/Adjusted_non_strict_area.csv"))
+
+
+```
+
+##Create new data frame for area 
+```{r}
+
+baseline_capad <- baseline_capad_area%>% 
+  dplyr::select(-c(...1, GIS_AREA, area_km2))
+
+baseline_strict<- baseline_strict_area%>% 
+  dplyr::select(-c(...1, GIS_AREA, area_km2))
+
+baseline_non_strict<- baseline_non_strict_area%>% 
+  dplyr::select(-c(...1, GIS_AREA, area_km2))
+
+```
+
+##Capad area figures
+```{r}
+Area1<- ggplot() +
+  theme_bw() +
+  geom_line(data = baseline_capad, aes(x = Year, y = total_area_km2, col = "Baseline")) +
+  geom_line(data = adjusted_capad_area, aes(x = Year, y = Capad_area, col = "Corrected")) +
+  scale_colour_discrete(type = colPalette, labels = c("Baseline", "Corrected")) + 
+  theme(legend.position = "none")+
+    theme(plot.margin = margin(r = 10))+
+  labs(title = "Full Capad Network",
+      y = "Area (km2)",
+      x = "Year",
+      col = "Type")
+
+```
+
+
+```{r}
+ggsave(here("figures/Capad_area.png"), width = 10, height= 6)
+```
+
+
+```{r}
+Area2<- ggplot() +
+  theme_bw() +
+  geom_line(data = baseline_strict, aes(x = Year, y = total_area_km2, col = "Baseline")) +
+  geom_line(data = adjusted_strict_area, aes(x = Year, y = Strict_area, col = "Corrected")) +
+  scale_colour_discrete(type = colPalette, labels = c("Baseline", "Corrected")) + 
+  theme(legend.position = "none")+
+    theme(plot.margin = margin(r = 10))+
+  labs(title = "Strict",
+      y = "Area (km2)",
+      x = "Year",
+      col = "Type")
+
+```
+
+
+```{r}
+ggsave(here("figures/Strict_area.png"), width = 10, height = 6)
+```
+
+```{r}
+Area3<- ggplot() +
+  theme_bw() +
+  geom_line(data = baseline_non_strict, aes(x = Year, y = total_area_km2, col = "Baseline")) +
+  geom_line(data = adjusted_non_strict_area, aes(x = Year, y = Non_strict_area, col = "Corrected")) +
+  scale_colour_discrete(type = colPalette, labels = c("Baseline", "Corrected")) + 
+  theme(legend.position = "none")+
+    theme(plot.margin = margin(r = 10))+
+  labs(title = "Non-Strict",
+      y = "Area (km2)",
+      x = "Year",
+      col = "Type")
+
+```
+
+```{r}
+Arealegend<- ggplot() +
+  theme_bw() +
+  geom_line(data = baseline_non_strict, aes(x = Year, y = total_area_km2, col = "Baseline")) +
+  geom_line(data = adjusted_non_strict_area, aes(x = Year, y = Non_strict_area, col = "Corrected")) +
+  scale_colour_discrete(type = colPalette, labels = c("Baseline", "Corrected")) + 
+  labs(title = "Non-Strict",
+      y = "Area (km2)",
+      x = "Year",
+      col = "Type")
+
+Legend<- get_legend(Arealegend)
+```
+
+
+```{r}
+ggsave(here("figures/Non_strict_area.png"), width = 10, height = 6)
+```
+
+
+```{r}
+plot_grid(Area1, Area2, Area3, Legend)
+
+plot_grid(plot_grid(PE1, MPG1, PE2, MPG2, PE3, MPG3, labels = c("a) Full Capad network","", "b) Non-strict","","c) Strict"), label_size = 12, ncol=2, hjust = 0), legend, rel_widths = c(1, 0.2))
+```
+
+
+#Metrics per area 
+## merge dataframes 
+
+```{r}
+eez<- vect(here("output_data/projected_eez.shp"))
+
+eez_area<- sum(expanse(eez, unit = "km"))
+```
+
+
+
+##PE capad
+```{r}
+baseline_merge1<- merge(baseline_capad, pe_long_capad, by = "Year", all = "TRUE")
+baseline_merge_capad<- merge(baseline_merge1, mpg_long_capad, by = "Year", all = "TRUE")
+
+baseline_capad_mutate<- baseline_merge_capad%>%
+  mutate(Prop = total_area_km2/eez_area)
+ 
+
+adjust_merge<- merge(adjusted_capad_area, pe_corrected_long_capad, by = "Year", all = "TRUE") 
+adjust_merge_capad<- merge(adjust_merge, mpg_corrected_long_capad,by = "Year", all = "TRUE" )
+
+adjust_capad_mutate<- adjust_merge_capad%>%
+  mutate(Prop = Capad_area/eez_area)
+```
+
+
+```{r}
+PE1<- ggplot() +
+  theme_bw() +
+  geom_point(data = baseline_capad_mutate, aes(x = Prop, y = PE, col = "Baseline"), na.rm = TRUE)+
+  geom_smooth(data = baseline_capad_mutate, aes(x = Prop, y = PE, col = "Baseline"), na.rm = TRUE, method = "lm", se = FALSE)+
+  geom_point(data = adjust_capad_mutate, aes(x = Prop, y = PE, col = "Corrected"), na.rm = TRUE)+
+geom_smooth(data = adjust_capad_mutate, aes(x = Prop, y = PE, col = "Corrected"), na.rm = TRUE, method = "lm", se = FALSE)+
+  scale_colour_discrete(type = colPalette, labels = c("Baseline", "Corrected")) + 
+  theme(legend.position = "none")+
+    theme(plot.margin = margin(r = 10))+
+  labs(title = "",
+      y = "PE",
+      x = "Proportion",
+      col = "Type")
+```
+
+##PE non_strict
+```{r}
+baseline_merge1<- merge(baseline_non_strict, pe_long_non_strict, by = "Year", all = "TRUE")
+baseline_merge_non_strict<- merge(baseline_merge1, mpg_long_non_strict, by = "Year", all = "TRUE")
+
+baseline_non_strict_mutate<- baseline_merge_non_strict%>%
+  mutate(Prop = total_area_km2/eez_area)
+ 
+
+adjust_merge<- merge(adjusted_non_strict_area, pe_corrected_long_non_strict, by = "Year", all = "TRUE") 
+adjust_merge_non_strict<- merge(adjust_merge, mpg_corrected_long_non_strict,by = "Year", all = "TRUE" )
+
+adjust_non_strict_mutate<- adjust_merge_non_strict%>%
+  mutate(Prop = Non_strict_area/eez_area)
+```
+
+
+```{r}
+PE2<- ggplot() +
+  theme_bw() +
+  geom_point(data = baseline_non_strict_mutate, aes(x = Prop, y = PE, col = "Baseline"), na.rm = TRUE)+
+  geom_smooth(data = baseline_non_strict_mutate, aes(x = Prop, y = PE, col = "Baseline"), na.rm = TRUE, method = "lm", se = FALSE)+
+  geom_point(data = adjust_non_strict_mutate, aes(x = Prop, y = PE, col = "Corrected"), na.rm = TRUE)+
+geom_smooth(data = adjust_non_strict_mutate, aes(x = Prop, y = PE, col = "Corrected"), na.rm = TRUE, method = "lm", se = FALSE)+
+  scale_colour_discrete(type = colPalette, labels = c("Baseline", "Corrected")) + 
+  theme(legend.position = "none")+
+    theme(plot.margin = margin(r = 10))+
+  labs(title = "",
+      y = "PE",
+      x = "Proportion",
+      col = "Type")
+```
+
+##PE strict
+```{r}
+baseline_merge1<- merge(baseline_strict, pe_long_strict, by = "Year", all = "TRUE")
+baseline_merge_strict<- merge(baseline_merge1, mpg_long_strict, by = "Year", all = "TRUE")
+
+baseline_strict_mutate<- baseline_merge_strict%>%
+  mutate(Prop = total_area_km2/eez_area)
+ 
+
+adjust_merge<- merge(adjusted_strict_area, pe_corrected_long_strict, by = "Year", all = "TRUE") 
+adjust_merge_strict<- merge(adjust_merge, mpg_corrected_long_strict,by = "Year", all = "TRUE" )
+
+adjust_strict_mutate<- adjust_merge_strict%>%
+  mutate(Prop = Strict_area/eez_area)
+```
+
+
+```{r}
+PE3<- ggplot() +
+  theme_bw() +
+  geom_point(data = baseline_strict_mutate, aes(x = Prop, y = PE, col = "Baseline"), na.rm = TRUE)+
+  geom_smooth(data = baseline_strict_mutate, aes(x = Prop, y = PE, col = "Baseline"), na.rm = TRUE, method = "lm", se = FALSE)+
+  geom_point(data = adjust_strict_mutate, aes(x = Prop, y = PE, col = "Corrected"), na.rm = TRUE)+
+geom_smooth(data = adjust_strict_mutate, aes(x = Prop, y = PE, col = "Corrected"), na.rm = TRUE, method = "lm", se = FALSE)+
+  scale_colour_discrete(type = colPalette, labels = c("Baseline", "Corrected")) + 
+    theme(plot.margin = margin(r = 10))+
+  theme(legend.position = "none")+
+  labs(title = "",
+      y = "PE",
+      x = "Proportion",
+      col = "Type")
+```
+
+
+##MPG capad
+```{r}
+MPG1<- ggplot() +
+  theme_bw() +
+  geom_point(data = baseline_capad_mutate, aes(x = Prop, y = MPG, col = "Baseline"), na.rm = TRUE)+
+  geom_smooth(data = baseline_capad_mutate, aes(x = Prop, y = MPG, col = "Baseline"), na.rm = TRUE, method = "lm", se = FALSE)+
+  geom_point(data = adjust_capad_mutate, aes(x = Prop, y = MPG, col = "Corrected"), na.rm = TRUE)+
+geom_smooth(data = adjust_capad_mutate, aes(x = Prop, y = MPG, col = "Corrected"), na.rm = TRUE, method = "lm", se = FALSE)+
+  scale_colour_discrete(type = colPalette, labels = c("Baseline", "Corrected")) + 
+  theme(legend.position = "none")+
+    theme(plot.margin = margin(r = 10))+
+  labs(title = "",
+      y = "MPG",
+      x = "Proportion",
+      col = "Type")
+```
+
+
+##MPG non_strict 
+```{r}
+MPG2<- ggplot() +
+  theme_bw() +
+  geom_point(data = baseline_non_strict_mutate, aes(x = Prop, y = MPG, col = "Baseline"), na.rm = TRUE)+
+  geom_smooth(data = baseline_non_strict_mutate, aes(x = Prop, y = MPG, col = "Baseline"), na.rm = TRUE, method = "lm", se = FALSE)+
+  geom_point(data = adjust_non_strict_mutate, aes(x = Prop, y = MPG, col = "Corrected"), na.rm = TRUE)+
+geom_smooth(data = adjust_non_strict_mutate, aes(x = Prop, y = MPG, col = "Corrected"), na.rm = TRUE, method = "lm", se = FALSE)+
+  scale_colour_discrete(type = colPalette, labels = c("Baseline", "Corrected")) + 
+  theme(legend.position = "none")+
+    theme(plot.margin = margin(r = 10))+
+  labs(title = "",
+      y = "MPG",
+      x = "Proportion",
+      col = "Type")
+```
+
+
+##MPG strict
+
+```{r}
+MPG3<- ggplot() +
+  theme_bw() +
+  geom_point(data = baseline_strict_mutate, aes(x = Prop, y = MPG, col = "Baseline"), na.rm = TRUE)+
+  #geom_smooth(data = baseline_strict_mutate, aes(x = Prop, y = MPG, col = "Baseline"), na.rm = TRUE, method = "lm", se = FALSE)+
+  geom_point(data = adjust_strict_mutate, aes(x = Prop, y = MPG, col = "Corrected"), na.rm = TRUE)+
+#geom_smooth(data = adjust_strict_mutate, aes(x = Prop, y = MPG, col = "Corrected"), na.rm = TRUE, method = "loess", se = FALSE)+
+  scale_colour_discrete(type = colPalette, labels = c("Baseline", "Corrected")) + 
+  theme(legend.position = "none")+
+  theme(plot.margin = margin(r = 10))+
+  labs(title = "",
+      y = "MPG",
+      x = "Proportion",
+      col = "Type")
+MPG3
+
+```
+
+
+```{r}
+MPGlegend<- ggplot() +
+  theme_bw() +
+  geom_point(data = baseline_strict_mutate, aes(x = Prop, y = MPG, col = "Baseline"), na.rm = TRUE)+
+  geom_smooth(data = baseline_strict_mutate, aes(x = Prop, y = MPG, col = "Baseline"), na.rm = TRUE, method = "lm", se = FALSE)+
+  geom_point(data = adjust_strict_mutate, aes(x = Prop, y = MPG, col = "Corrected"), na.rm = TRUE)+
+geom_smooth(data = adjust_strict_mutate, aes(x = Prop, y = MPG, col = "Corrected"), na.rm = TRUE, method = "lm", se = FALSE)+
+  scale_colour_discrete(type = colPalette, labels = c("Baseline", "Corrected")) + 
+  labs(y = "MPG",
+      x = "Proportion",
+      col = "Type")
+
+legend<- get_legend(MPGlegend)
+```
+
+
+
+```{r}
+plot_grid(plot_grid(PE1, MPG1, PE2, MPG2, PE3, MPG3, labels = c("a) Full Capad network","", "b) Non-strict","","c) Strict"), label_size = 12, ncol=2, hjust = 0), legend, rel_widths = c(1, 0.2))
+
+ggsave(here("figures/MetricvsProp.png"))
+
+```
+
