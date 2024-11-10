@@ -14,6 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(sf)
 library(tidyverse)
 library(here)
+library(terra)
 ```
 
 
@@ -33,6 +34,9 @@ imcra_diss<-imcra %>%
   group_by(MESO_NAME) %>% 
   summarise(GIS_AREA_KM2 = sum(AREA_KM2, na.rm = T)) %>% 
   mutate(meso_area_km2 = as.numeric(st_area(.))*1e-6)
+
+imcra_all <- imcra_diss %>%
+mutate(ecoprotec = 0, prop_all = 0)
 ```
 
 # CAPAD baseline
@@ -63,13 +67,120 @@ non_strict<-st_read(here("output_data/Capad_baseline/Non_strict_baseline.shp"))
 # Intersect ecoregions with MPA
 
 ```{r}
-capad_imcra<-st_intersection(capad, imcra_diss) %>% 
-  st_make_valid(.) %>% 
-  mutate(ecoprotec = as.numeric(st_area(.))*1e-6,
-         prop_all = ecoprotec/meso_area_km2) %>% #mutate is to make a new column. 
-  #this finds the proportion area protected of each ecoregion 
-  #the . in st_area allows us to use the output from the intersecting function.
+
+capad_files <- list.files(here("output_data/Capad_baseline"), pattern = "capad_baseline_", full.names = TRUE)
+
+capad_files2<- capad_files[grep("shp", capad_files)]
+
+years<- c(1916:2022)
+
+for(i in 1:length(years)){
+  print(years[[i]])
+  sub_capad<- st_read(capad_files2[grep(years[[i]],capad_files2)])
+  
+  capad<-sub_capad %>% 
+  mutate(diss = 1) %>% 
+  group_by(diss) %>% 
+  summarise(.)
+  
+  capad$new_capad_area<- capad%>% st_area(.)*1e-6
+  
+  baseline_capad_imcra<-st_intersection(capad, imcra_diss) %>% 
+  st_make_valid(.) %>%
+    mutate(ecoprotec = as.numeric(st_area(.))*1e-6,
+         prop_all = ecoprotec/meso_area_km2)  %>% 
+     filter(st_geometry_type(.) !="LINESTRING")%>%
+    filter(st_geometry_type(.) !="MULTILINESTRING")%>%
   st_cast(., "POLYGON")
+  
+
+meso_names_remove <- unique(baseline_capad_imcra$MESO_NAME)
+filter_imcra_diss<- imcra_diss%>%
+  filter(!MESO_NAME %in% meso_names_remove)%>%
+  mutate( ecoprotec = 0,
+    prop_all = 0)
+  
+final_baseline_capad_imcra <- bind_rows(baseline_capad_imcra, filter_imcra_diss)  
+  
+  st_write(final_baseline_capad_imcra, here(paste0("output_data/IMCRA_intersect/capad_imcra_baseline_",years[[i]],".shp")), append = FALSE)
+}
+
+```
+
+```{r}
+strict_files <- list.files(here("output_data/Capad_baseline"), pattern = "Strict_baseline", full.names = TRUE)
+
+strict_only <- strict_files[!grepl("non",strict_files)]
+  
+strict_files2<- strict_only[grep("shp", strict_only)]
+
+years<- c(1955:2022)
+for(i in 1:length(years)){
+  print(years[[i]])
+  sub_strict<- st_read(strict_files2[grep(years[[i]],strict_files2)])
+  
+    strict<-sub_strict %>% 
+  mutate(diss = 1) %>% 
+  group_by(diss) %>% 
+  summarise(.)
+  
+  baseline_strict_imcra<-st_intersection(strict, imcra_diss) %>% 
+  st_make_valid(.) %>%
+    mutate(ecoprotec = as.numeric(st_area(.))*1e-6,
+         prop_strict = ecoprotec/meso_area_km2)  %>% 
+  st_cast(., "POLYGON")
+  
+  meso_names_remove <- unique(baseline_strict_imcra$MESO_NAME)
+filter_imcra_diss<- imcra_diss%>%
+  filter(!MESO_NAME %in% meso_names_remove)%>%
+  mutate( ecoprotec = 0,
+    prop_strict = 0)
+  
+final_baseline_strict_imcra <- bind_rows(baseline_strict_imcra, filter_imcra_diss)  
+
+  st_write(final_baseline_strict_imcra, here(paste0("output_data/IMCRA_intersect/strict_imcra_baseline_",years[[i]],".shp")), append = TRUE)
+}
+
+```
+
+
+```{r}
+non_strict_files <- list.files(here("output_data/Capad_baseline"), pattern = "Non_strict_", full.names = TRUE)
+  
+non_strict_files2<- non_strict_files[grep("shp", non_strict_files)]
+
+years<- c(1916:2022)
+
+for(i in 2:length(years)){
+  
+  print(years[[i]])
+  sub_non_strict<- st_read(non_strict_files2[grep(years[[i]],non_strict_files2)])
+  
+  non_strict<-sub_non_strict %>% 
+  mutate(diss = 1) %>% 
+  group_by(diss) %>% 
+  summarise(.)
+  
+  baseline_non_strict_imcra<-st_intersection(non_strict, imcra_diss) %>% 
+  st_make_valid(.) %>%
+    mutate(ecoprotec = as.numeric(st_area(.))*1e-6,
+         prop_non_strict = ecoprotec/meso_area_km2)%>% 
+   filter(st_geometry_type(.) !="LINESTRING")%>%
+    filter(st_geometry_type(.) !="MULTILINESTRING")%>%
+  st_cast(.,"POLYGON")
+  
+  meso_names_remove <- unique(baseline_non_strict_imcra$MESO_NAME)
+filter_imcra_diss<- imcra_diss%>%
+  filter(!MESO_NAME %in% meso_names_remove)%>%
+  mutate( ecoprotec = 0,
+    prop_non_strict = 0)
+  
+final_baseline_non_strict_imcra <- bind_rows(baseline_non_strict_imcra, filter_imcra_diss)  
+
+  
+  st_write(final_baseline_non_strict_imcra, here(paste0("output_data/IMCRA_intersect/non_strict_imcra_baseline_",years[[i]],".shp")), append = FALSE)
+}
+
 ```
 
 
@@ -87,18 +198,6 @@ non_strict_imcra<-st_intersection(non_strict, imcra_diss) %>%
   st_cast(., "POLYGON")
 ```
 
-```{r}
-st_write(capad_imcra, here("output_data/IMCRA_intersect/All_capad_imcra_intersect.shp"), append = FALSE)
-
-
-st_write(strict_imcra, here("output_data/IMCRA_intersect/Strict_imcra_intersect.shp"), append = FALSE)
-
-view(st_read(here("output_data/IMCRA_intersect/All_capad_imcra_intersect.shp")))
-
-
-st_write(non_strict_imcra, here("output_data/IMCRA_intersect/Non_strict_imcra_intersect.shp"), append = FALSE)
-```
-
 
 # HERE YOU WOULD THEN REPEAT FOR THE CORRECTED ONE ONCE YOU HAVE DONE THE HUMAN FOOTPRINT CORRECTIONS
 
@@ -111,11 +210,19 @@ capad_files <- list.files(here("output_data/Capad_adjusted"), pattern = "capad_a
 capad_files2<- capad_files[grep("shp", capad_files)]
 
 years<- c(2003:2022)
+
 for(i in 1:length(years)){
   print(years[[i]])
   sub_capad<- st_read(capad_files2[grep(years[[i]],capad_files2)])
   
-  adjust_capad_imcra<-st_intersection(sub_capad, imcra_diss) %>% 
+  capad<-sub_capad %>% 
+  mutate(diss = 1) %>% 
+  group_by(diss) %>% 
+  summarise(.)
+  
+  capad$new_capad_area<- capad%>% st_area(.)*1e-6
+  
+  adjust_capad_imcra<-st_intersection(capad, imcra_diss) %>% 
   st_make_valid(.) %>%
     mutate(ecoprotec = as.numeric(st_area(.))*1e-6,
          prop_all = ecoprotec/meso_area_km2)  %>% 
@@ -123,14 +230,23 @@ for(i in 1:length(years)){
     filter(st_geometry_type(.) !="MULTILINESTRING")%>%
   st_cast(., "POLYGON")
   
-  st_write(adjust_capad_imcra, here(paste0("output_data/IMCRA_intersect_adjust/capad_imcra_adjusted_",years[[i]],".shp")), append = FALSE)
+
+meso_names_remove <- unique(adjust_capad_imcra$MESO_NAME)
+filter_imcra_diss<- imcra_diss%>%
+  filter(!MESO_NAME %in% meso_names_remove)%>%
+  mutate( ecoprotec = 0,
+    prop_all = 0)
+  
+final_adjust_capad_imcra <- bind_rows(adjust_capad_imcra, filter_imcra_diss)  
+  
+  st_write(final_adjust_capad_imcra, here(paste0("output_data/IMCRA_intersect_adjust/capad_imcra_adjusted_",years[[i]],".shp")), append = FALSE)
 }
 
 ```
 
 
 ```{r}
-strict_files <- list.files(here("output_data/Capad_adjusted"), pattern = "strict_adjust", full.names = TRUE)
+strict_files <- list.files(here("output_data/Capad_adjusted"), pattern = "strict_adjust_2", full.names = TRUE)
 
 strict_only <- strict_files[!grepl("non",strict_files)]
   
@@ -141,20 +257,33 @@ for(i in 1:length(years)){
   print(years[[i]])
   sub_strict<- st_read(strict_files2[grep(years[[i]],strict_files2)])
   
-  adjust_strict_imcra<-st_intersection(sub_strict, imcra_diss) %>% 
+    strict<-sub_strict %>% 
+  mutate(diss = 1) %>% 
+  group_by(diss) %>% 
+  summarise(.)
+  
+  adjust_strict_imcra<-st_intersection(strict, imcra_diss) %>% 
   st_make_valid(.) %>%
     mutate(ecoprotec = as.numeric(st_area(.))*1e-6,
          prop_strict = ecoprotec/meso_area_km2)  %>% 
   st_cast(., "POLYGON")
   
-  st_write(adjust_strict_imcra, here(paste0("output_data/IMCRA_intersect_adjust/strict_imcra_adjusted_",years[[i]],".shp")), append = FALSE)
+  meso_names_remove <- unique(adjust_strict_imcra$MESO_NAME)
+filter_imcra_diss<- imcra_diss%>%
+  filter(!MESO_NAME %in% meso_names_remove)%>%
+  mutate( ecoprotec = 0,
+    prop_strict = 0)
+  
+final_adjust_strict_imcra <- bind_rows(adjust_strict_imcra, filter_imcra_diss)  
+
+  st_write(final_adjust_strict_imcra, here(paste0("output_data/IMCRA_intersect_adjust/strict_imcra_adjusted_",years[[i]],".shp")), append = FALSE)
 }
 
 ```
 
 
 ```{r}
-non_strict_files <- list.files(here("output_data/Capad_adjusted"), pattern = "non_strict_adjust", full.names = TRUE)
+non_strict_files <- list.files(here("output_data/Capad_adjusted"), pattern = "non_strict_adjust_2", full.names = TRUE)
   
 non_strict_files2<- non_strict_files[grep("shp", non_strict_files)]
 
@@ -163,7 +292,12 @@ for(i in 1:length(years)){
   print(years[[i]])
   sub_non_strict<- st_read(non_strict_files2[grep(years[[i]],non_strict_files2)])
   
-  adjust_non_strict_imcra<-st_intersection(sub_non_strict, imcra_diss) %>% 
+  non_strict<-sub_non_strict %>% 
+  mutate(diss = 1) %>% 
+  group_by(diss) %>% 
+  summarise(.)
+  
+  adjust_non_strict_imcra<-st_intersection(non_strict, imcra_diss) %>% 
   st_make_valid(.) %>%
     mutate(ecoprotec = as.numeric(st_area(.))*1e-6,
          prop_non_strict = ecoprotec/meso_area_km2)%>% 
@@ -171,7 +305,16 @@ for(i in 1:length(years)){
     filter(st_geometry_type(.) !="MULTILINESTRING")%>%
   st_cast(.,"POLYGON")
   
-  st_write(adjust_non_strict_imcra, here(paste0("output_data/IMCRA_intersect_adjust/non_strict_imcra_adjusted_",years[[i]],".shp")), append = FALSE)
+  meso_names_remove <- unique(adjust_non_strict_imcra$MESO_NAME)
+filter_imcra_diss<- imcra_diss%>%
+  filter(!MESO_NAME %in% meso_names_remove)%>%
+  mutate( ecoprotec = 0,
+    prop_non_strict = 0)
+  
+final_adjust_non_strict_imcra <- bind_rows(adjust_non_strict_imcra, filter_imcra_diss)  
+
+  
+  st_write(final_adjust_non_strict_imcra, here(paste0("output_data/IMCRA_intersect_adjust/non_strict_imcra_adjusted_",years[[i]],".shp")), append = FALSE)
 }
 
 ```
