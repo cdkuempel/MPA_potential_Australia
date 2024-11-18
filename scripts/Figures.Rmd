@@ -30,17 +30,17 @@ colPalette <- c("#3B3561", "#ECA72C", "#226F54","#B8D4E3", "#C06E52","#01172F", 
 # Plot PE through time
 
 ```{r}
-pe<-read_csv(here("output_data/results/PE_baseline_calculations.csv"))
+pe<-read_csv(here("output_data/results/PE_baseline_all_imcra.csv"))
 ```
 
 ##Create new data frame for PE
 ```{r}
-pe_long <- pivot_longer(pe, cols= c("CAPAD_PE", "Strict_PE", "Non_strict_PE"),
+pe_long <- pivot_longer(pe, cols= c("CAPAD_PE", "Strict_PE", "Non_Strict_PE"),
                          names_to = "PE_type",
                          values_to = "PE")
 
 pe_long<- pe_long%>% 
-  dplyr::select(-c(CAPAD_N,Strict_N,Non_strict_N))
+  dplyr::select(-c(CAPAD_N,Strict_N,Non_Strict_N))
 ```
 
 ##Plot
@@ -67,7 +67,7 @@ ggsave(here("figures/All_PAs_Protection_equality.png"), width = 10, height= 6)
 # Plot corrected PE through time 
 
 ```{r}
-pe_corrected<-read_csv(here("output_data/results/PE_corrected_calculations_2.csv"))
+pe_corrected<-read_csv(here("output_data/results/PE_corrected_all_imcra.csv"))
 ```
 
 ##Create new data frame for PE
@@ -131,7 +131,7 @@ ggplot() +
 ```
 
 ```{r}
-ggsave(here("figures/Strict_PE.png"), width = 10, height= 6)
+ggsave(here("figures/Strict_PE_all.png"), width = 10, height= 6)
 ```
 
 ##Non strict
@@ -139,7 +139,7 @@ ggsave(here("figures/Strict_PE.png"), width = 10, height= 6)
 
 pe_long_non_strict <- pe_long%>%
   group_by(PE_type)%>%
-  filter(PE_type == "Non_strict_PE")
+  filter(PE_type == "Non_Strict_PE")
 
 pe_corrected_long_non_strict <- pe_corrected_long%>%
   group_by(PE_type)%>%
@@ -162,7 +162,7 @@ ggplot() +
 ```
 
 ```{r}
-ggsave(here("figures/Non_strict_PE.png"), width = 10, height= 6)
+ggsave(here("figures/Non_strict_PE_all.png"), width = 10, height= 6)
 ```
 
 ##Full CAPAD network
@@ -194,14 +194,14 @@ ggplot() +
 
 
 ```{r}
-ggsave(here("figures/Capad_PE.png"), width = 10, height= 6)
+ggsave(here("figures/Capad_PE_all.png"), width = 10, height= 6)
 ```
 
 #Plot MPG 
 ##Load in data 
 
 ```{r}
-mpg<- read_csv(here("output_data/results/MPG_baseline_calculations.csv"))
+mpg<- read_csv(here("output_data/results/MPG_baseline_all_imcra.csv"))
 ```
 
 ##Create new data frame for MPG 
@@ -237,7 +237,7 @@ ggsave(here("figures/All_PAs_MPG.png"), width =10, height=6)
 
 #Plot corrected MPG
 ```{r}
-mpg_corrected<- read_csv(here("output_data/results/MPG_corrected_calculations_2.csv"))
+mpg_corrected<- read_csv(here("output_data/results/MPG_corrected_all_imcra.csv"))
 ```
 
 ##Create new data frame for MPG 
@@ -299,7 +299,7 @@ ggplot() +
 
 
 ```{r}
-ggsave(here("figures/Strict_MPG.png"), width =10, height=6)
+ggsave(here("figures/Strict_MPG_all.png"), width =10, height=6)
 ```
 
 
@@ -331,7 +331,7 @@ ggplot() +
 
 
 ```{r}
-ggsave(here("figures/Non_strict_MPG.png"), width =10, height=6)
+ggsave(here("figures/Non_strict_MPG_all.png"), width =10, height=6)
 ```
 
 
@@ -363,7 +363,7 @@ ggplot() +
 
 
 ```{r}
-ggsave(here("figures/Capad_MPG.png"), width = 10, height= 6)
+ggsave(here("figures/Capad_MPG_all.png"), width = 10, height= 6)
 ```
 
 
@@ -639,9 +639,9 @@ geom_smooth(data = adjust_non_strict_mutate, aes(x = Prop, y = MPG, col = "Corre
 MPG3<- ggplot() +
   theme_bw() +
   geom_point(data = baseline_strict_mutate, aes(x = Prop, y = MPG, col = "Baseline"), na.rm = TRUE)+
-  #geom_smooth(data = baseline_strict_mutate, aes(x = Prop, y = MPG, col = "Baseline"), na.rm = TRUE, method = "lm", se = FALSE)+
+geom_smooth(data = baseline_strict_mutate, aes(x = Prop, y = MPG, col = "Baseline"), na.rm = TRUE, method = "lm", se = FALSE)+
   geom_point(data = adjust_strict_mutate, aes(x = Prop, y = MPG, col = "Corrected"), na.rm = TRUE)+
-#geom_smooth(data = adjust_strict_mutate, aes(x = Prop, y = MPG, col = "Corrected"), na.rm = TRUE, method = "loess", se = FALSE)+
+geom_smooth(data = adjust_strict_mutate, aes(x = Prop, y = MPG, col = "Corrected"), na.rm = TRUE, method = "lm", se = FALSE)+
   scale_colour_discrete(type = colPalette, labels = c("Baseline", "Corrected")) + 
   theme(legend.position = "none")+
   theme(plot.margin = margin(r = 10))+
