@@ -26,6 +26,7 @@ library(maps)
 ```{r}
 chi_files<- list.files(here("output_data/HFP/cumulative_impact"), pattern = "direct_chi", full.names = TRUE)
 
+plot(rast(chi_files[20]))
 ```
 
 #install eez 
