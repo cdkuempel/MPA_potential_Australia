@@ -68,3 +68,25 @@ for(i in 1:length(years)){
 write.csv(wilderness_aus, here("output_data/results/wilderness_proportions.csv"))
 ```
 
+#make long 
+```{r}
+wilderness_long <- pivot_longer(wilderness_aus, cols= c("Wilderness_prop", "Non_wilderness_prop"),
+                         names_to = "Type",
+                         values_to = "Proportion")
+wilderness_long<- wilderness_long%>% 
+  dplyr::select(-c(Wilderness, Non_wilderness))
+
+```
+
+#bar chart
+```{r}
+
+ggplot(wilderness_long, aes(x = Year, y = Proportion, fill = Type ))+
+  geom_bar(position = "stack", stat = "identity")+
+  scale_fill_discrete(type = c("#3B3561", "#ECA72C"), labels = c("Non-wilderness", "Wilderness"))+
+  labs(y = "Proportion of Australian ocean")+
+  theme_bw()
+ 
+ggsave(here("figures/wilderness_proportions.png"), width =10, height=8)
+```
+
