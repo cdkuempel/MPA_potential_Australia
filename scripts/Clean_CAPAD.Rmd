@@ -78,7 +78,7 @@ st_write(non_strict_2022, here("output_data/Capad_baseline/Full_non_strict_2022.
 ##All by year 
 
 ```{r}
-years<-min(capad$Year):max(capad$Year)
+years<-1916:2022
 
 for(i in 1:length(years)){
   print(years[[i]])
