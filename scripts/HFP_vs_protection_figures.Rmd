@@ -1,0 +1,130 @@
+---
+title: "Untitled"
+author: "Caitie"
+date: "2025-07-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(sf)
+library(ggplot2)
+library(here)
+library(tidyverse)
+library(terra)
+library(cowplot)
+library(ggrepel)
+library(tmap)
+library(viridis)
+```
+
+
+# Full CAPAD
+```{r}
+dat<-read.csv(here("output_data/Capad_summary.csv"))
+```
+
+
+```{r}
+strict_dat<-read.csv(here("output_data/Strict_summary.csv")) %>% 
+  dplyr::select(MESO_NAME, prop_str)
+
+dat<-full_join(dat, strict_dat, by = "MESO_NAME")
+
+```
+
+
+```{r}
+dat2<-dat %>%
+  mutate(group = ifelse(prop_protec<0.3 & hfp_perc<=0, "Represent",
+                        ifelse(prop_protec>=0.3& hfp_perc<=0,"Maintain",
+                               ifelse(prop_protec>=0.3 & hfp_perc>0, "Manage",
+                                      ifelse(prop_protec<0.3 & hfp_perc>0, "Protect", NA)))))
+
+write.csv(dat2, here("output_data/Full_capad_eco_cat.csv"))
+
+
+```
+
+
+```{r}
+protect_restore<- dat2 %>%
+  filter(group == "Protect")
+manage<-dat2 %>%
+  filter(group == "Manage")
+maintain<-dat2 %>%
+  filter(group == "Maintain")
+protect<-dat2 %>%
+  filter(group == "Represent")
+```
+
+Results
+
+```{r}
+length(unique(protect_restore$MESO_NAME))
+length(unique(manage$MESO_NAME))
+length(unique(maintain$MESO_NAME))
+length(unique(protect$MESO_NAME))
+```
+
+```{r}
+dat2<-dat2 %>%
+  mutate(label = ifelse(group == "Maintain", as.character(MESO_NAME),
+                        ifelse(group == "Represent", as.character(MESO_NAME),
+                               ifelse(MESO_NAME %in% c("Pilbara (offshore)", "King Sound", "Murat", "Pellew", "Batemans Shelf", "Carpentaria"), as.character(MESO_NAME),
+                                      ifelse(MESO_NAME %in% c("Mackay-Capricorn", "Groote", "Arnehm Wessel", "Karumba-Nassau", "Shoalwater Coast"), as.character(MESO_NAME), NA)))))
+```
+
+
+
+```{r}
+ggplot(dat2, aes(y = prop_protec*100, colour = hfp_22, x = hfp_perc,  size = prop_str*100)) +
+  geom_point() +
+  theme_bw() +
+  geom_hline(yintercept = 30, linetype="dotted") +
+  geom_vline(xintercept = 0, linetype="dotted") +
+  labs(x = "Percent impact change (2003-2022)",
+       size = "Percent strict protection (2022)",
+       y = "Precent protection (2022)",
+       colour = "Direct impact (2022)") +
+  scale_colour_viridis() +
+    theme(legend.position="top")+
+  geom_label_repel(size = 3, label.size = NA, aes(label = label))
+```
+```{r}
+ggsave(here("figures", "Full_Capad_eco_groups.png"), height = 7, width = 8)
+```
+
+
+```{r}
+eco<-st_read(here("raw_data/intersect_data/IMCRA_diss.shp")) 
+
+eco2<-eco %>% 
+  full_join(dat2, by = c("MESO_NA" = "MESO_NAME"))
+
+eco2<-eco2 %>%
+  mutate(group2 = factor(group, levels = c("Protect", "Manage", "Maintain", "Represent")))
+```
+
+```{r}
+ggplot(data = eco2) +
+    geom_sf(data = eco2, aes(fill = group2)) +
+    ggrepel::geom_label_repel(
+    data = eco2,
+    size = 2,
+    aes(label = label, geometry = geometry),
+    stat = "sf_coordinates",
+    label.size = NA
+  ) + 
+  theme_bw() +
+  labs(fill = "Category") +
+  scale_fill_viridis_d() 
+    #geom_point(data = eco2, aes(x = longitude, y = latitude), size = 4, 
+    #    shape = 23, fill = "darkred") 
+```
+```{r}
+ggsave(here("figures", "Full_Capad_eco_groups_map.png"), height = 5, width = 7)
+```
